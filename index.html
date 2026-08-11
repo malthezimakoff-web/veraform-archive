@@ -67,7 +67,7 @@
   .tab.active { background: var(--panel2); color: var(--accent); border-color: var(--line); font-weight: 600; }
 
   main { flex: 1; min-height: 0; display: flex; }
-  .view { flex: 1; min-height: 0; display: none; }
+  .view { flex: 1; min-width: 0; min-height: 0; display: none; }
   .view.active { display: flex; }
 
   /* ---- entities view ---- */
@@ -167,6 +167,51 @@
   .qcard .qbar i { display: block; height: 100%; background: var(--accent); }
   .qcard .qcov { font-family: var(--mono); font-size: 12px; color: var(--muted); }
 
+  /* ---- calendar ---- */
+  #view-calendar.active { display: flex; }
+  #view-calendar { gap: 0; min-height: 0; }
+  .cal-main { flex: 1; overflow-y: auto; padding: 20px 24px; min-width: 0; }
+  .cal-rail { width: 380px; flex-shrink: 0; border-left: 1px solid var(--line); overflow-y: auto; padding: 18px 18px 40px; background: var(--panel); }
+  .cal-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 14px; }
+  .cal-head h2 { font-family: var(--serif); font-size: 22px; font-weight: 600; }
+  .cal-head .nav { display: flex; gap: 4px; margin-left: auto; }
+  .cal-head .nav button { background: var(--panel); border: 1px solid var(--line); color: var(--muted);
+    border-radius: 4px; padding: 3px 10px; font-size: 13px; cursor: pointer; font-family: var(--mono); }
+  .cal-head .nav button:hover { color: var(--accent); border-color: var(--accent-dim); }
+  .grid7 { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .grid7 .dow { background: var(--panel); padding: 6px 8px; font-size: 10.5px; text-transform: uppercase; letter-spacing: .5px; color: var(--dim); text-align: center; }
+  .cell { background: var(--panel2); min-width: 0; min-height: 92px; padding: 5px 6px; display: flex; flex-direction: column; gap: 3px; }
+  .cell.out { opacity: .35; }
+  .cell.today { background: var(--panel); box-shadow: inset 0 0 0 1px var(--accent-dim); }
+  .cell .dnum { font-family: var(--mono); font-size: 11px; color: var(--dim); }
+  .cell.today .dnum { color: var(--accent); font-weight: 700; }
+  .ev-chip { font-size: 10.5px; line-height: 1.25; padding: 2px 5px; border-radius: 3px; cursor: pointer;
+    border-left: 2px solid var(--accent); background: rgba(201,162,75,.10); color: var(--text);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ev-chip.tender { border-left-color: var(--ok); background: rgba(95,174,114,.10); }
+  .ev-chip.regulatory { border-left-color: var(--bad); background: rgba(209,106,90,.10); }
+  .ev-chip.overdue { opacity: .6; text-decoration: line-through; }
+  .ev-chip:hover { background: var(--panel); }
+  .rail-sec { margin-bottom: 22px; }
+  .rail-sec h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: var(--dim); margin-bottom: 9px; }
+  .mile { padding: 9px 11px; background: var(--panel2); border: 1px solid var(--line); border-radius: 5px;
+    margin-bottom: 7px; border-left: 3px solid var(--accent); }
+  .mile.tender { border-left-color: var(--ok); }
+  .mile.regulatory { border-left-color: var(--bad); }
+  .mile.overdue { opacity: .65; }
+  .mile .top { display: flex; gap: 8px; align-items: baseline; }
+  .mile .days { font-family: var(--mono); font-size: 11px; color: var(--accent); white-space: nowrap; }
+  .mile.overdue .days { color: var(--bad); }
+  .mile .lbl { font-size: 12.5px; font-weight: 600; flex: 1; min-width: 0; }
+  .mile .amt { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .mile .act { font-size: 11.5px; color: var(--muted); margin-top: 5px; line-height: 1.4; }
+  .mile .who { font-size: 11px; color: var(--dim); margin-top: 5px; }
+  .mile .who b { color: var(--text); font-weight: 600; }
+  .mile a { color: var(--accent-dim); }
+  .sumbar { display: flex; gap: 16px; margin-bottom: 16px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
+  .sumbar b { color: var(--text); font-family: var(--mono); }
+  .sumbar .warn b { color: var(--bad); }
+
   .empty { padding: 40px 20px; text-align: center; color: var(--dim); font-family: var(--serif); font-style: italic; }
   a { color: inherit; }
 
@@ -218,7 +263,8 @@
     <input id="search" type="text" placeholder="search entities, claims, sources…">
   </div>
   <div class="tabs">
-    <div class="tab active" data-view="entities">Entities</div>
+    <div class="tab active" data-view="calendar">Calendar</div>
+    <div class="tab" data-view="entities">Entities</div>
     <div class="tab" data-view="prospects">Prospects</div>
     <div class="tab" data-view="evidence">Evidence</div>
     <div class="tab" data-view="questions">Questions</div>
@@ -228,7 +274,7 @@
 </header>
 
 <main>
-  <div class="view active" id="view-entities">
+  <div class="view" id="view-entities">
     <div class="facets">
       <h3>Type</h3>
       <div class="flist" id="typeFacets"></div>
@@ -246,6 +292,8 @@
     <div class="detail-empty" id="detailEmpty">Select an entity to read its dossier</div>
     <div class="detail" id="detail" style="display:none"></div>
   </div>
+
+  <div class="view active" id="view-calendar"></div>
 
   <div class="view" id="view-prospects">
     <div style="flex:1; display:flex; flex-direction:column; min-width:0;">
@@ -350,6 +398,7 @@ function staticApi(path) {
   if (u.pathname === "/api/meta") return A.meta;
   if (u.pathname === "/api/questions") return A.questions;
   if (u.pathname === "/api/patterns") return A.patterns;
+  if (u.pathname === "/api/calendar") return A.calendar;
   if (u.pathname.startsWith("/api/entity/")) {
     const d = A.entity_details[u.pathname.split("/").pop()];
     if (!d) throw new Error(404);
@@ -575,6 +624,109 @@ async function loadProspects() {
   }));
 }
 
+
+let calMonth = null;  // Date anchored to the 1st of the displayed month
+let calData = null;
+
+function daysUntil(iso) {
+  const d = new Date(iso + "T00:00:00");
+  const t = new Date(); t.setHours(0,0,0,0);
+  return Math.round((d - t) / 86400000);
+}
+function fmtAmt(v) {
+  if (!v) return "";
+  return v >= 1e6 ? (v/1e6).toFixed(1) + "M" : Math.round(v/1e3) + "k";
+}
+
+async function loadCalendar() {
+  calData = await api("/api/calendar");
+  if (!calMonth) { const n = new Date(); calMonth = new Date(n.getFullYear(), n.getMonth(), 1); }
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const dated = calData.filter(m => m.due_date);
+  const triggers = calData.filter(m => !m.due_date);
+  const overdue = dated.filter(m => daysUntil(m.due_date) < 0);
+  const soon = dated.filter(m => { const d = daysUntil(m.due_date); return d >= 0 && d <= 45; })
+                    .sort((a,b) => a.due_date.localeCompare(b.due_date));
+  const inPlay = soon.reduce((s,m) => s + (m.amount_dkk || 0), 0);
+
+  // month grid
+  const y = calMonth.getFullYear(), mo = calMonth.getMonth();
+  const first = new Date(y, mo, 1);
+  const startDow = (first.getDay() + 6) % 7;           // Monday-first
+  const daysIn = new Date(y, mo + 1, 0).getDate();
+  const prevDays = new Date(y, mo, 0).getDate();
+  const todayIso = new Date().toISOString().slice(0,10);
+  const byDay = {};
+  dated.forEach(m => { (byDay[m.due_date] = byDay[m.due_date] || []).push(m); });
+
+  let cells = "";
+  for (let i = 0; i < 42; i++) {
+    let dnum, iso, out = false;
+    if (i < startDow) { dnum = prevDays - startDow + 1 + i; const d = new Date(y, mo-1, dnum); iso = isoOf(d); out = true; }
+    else if (i - startDow < daysIn) { dnum = i - startDow + 1; iso = isoOf(new Date(y, mo, dnum)); }
+    else { dnum = i - startDow - daysIn + 1; iso = isoOf(new Date(y, mo+1, dnum)); out = true; }
+    const evs = (byDay[iso] || []).map(m => {
+      const od = daysUntil(m.due_date) < 0 ? " overdue" : "";
+      return `<div class="ev-chip ${esc(m.category||"")}${od}" data-ref="${esc(m.ref||"")}" title="${esc(m.label)}">${esc(m.label)}</div>`;
+    }).join("");
+    cells += `<div class="cell${out?" out":""}${iso===todayIso?" today":""}"><span class="dnum">${dnum}</span>${evs}</div>`;
+  }
+  const dows = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d=>`<div class="dow">${d}</div>`).join("");
+  const monthName = calMonth.toLocaleString("en", {month:"long", year:"numeric"});
+
+  const mileHtml = m => {
+    const d = daysUntil(m.due_date);
+    const od = d < 0;
+    const who = (m.contacts||[]).map(c => `<b>${esc(c.name)}</b>${c.reach?" · "+esc(c.reach):""}`).join(", ");
+    return `<div class="mile ${esc(m.category||"")}${od?" overdue":""}">
+      <div class="top"><span class="days">${od?d+"d":"+"+d+"d"}</span>
+        <span class="lbl">${esc(m.label)}</span>
+        ${m.amount_dkk?`<span class="amt">${fmtAmt(m.amount_dkk)}</span>`:""}</div>
+      ${m.action?`<div class="act">${esc(m.action)}</div>`:""}
+      ${who?`<div class="who">${who}</div>`:""}
+      ${m.source_url?`<div class="who"><a href="${esc(m.source_url)}" target="_blank" rel="noopener">source</a></div>`:""}
+    </div>`;
+  };
+
+  $("view-calendar").innerHTML = `
+    <div class="cal-main">
+      <div class="cal-head">
+        <h2>${monthName}</h2>
+        <div class="nav">
+          <button data-nav="-1">←</button><button data-nav="0">today</button><button data-nav="1">→</button>
+        </div>
+      </div>
+      <div class="sumbar">
+        <span><b>${soon.length}</b> due in 45 days</span>
+        <span><b>${fmtAmt(inPlay)} DKK</b> in play</span>
+        ${overdue.length?`<span class="warn"><b>${overdue.length}</b> overdue — close or reschedule</span>`:""}
+        <span><b>${triggers.length}</b> watch triggers</span>
+      </div>
+      <div class="grid7">${dows}${cells}</div>
+    </div>
+    <div class="cal-rail">
+      <div class="rail-sec"><h3>Next 45 days</h3>
+        ${soon.length?soon.map(mileHtml).join(""):'<div class="empty">Nothing due.</div>'}</div>
+      ${overdue.length?`<div class="rail-sec"><h3>Overdue (${overdue.length})</h3>${overdue.map(mileHtml).join("")}</div>`:""}
+      ${triggers.length?`<div class="rail-sec"><h3>Watch triggers (undated)</h3>${triggers.map(m=>`
+        <div class="mile ${esc(m.category||"")}"><div class="top"><span class="lbl">${esc(m.label)}</span></div>
+        ${m.action?`<div class="act">${esc(m.action)}</div>`:""}</div>`).join("")}</div>`:""}
+    </div>`;
+
+  $("view-calendar").querySelectorAll("[data-nav]").forEach(b => b.addEventListener("click", () => {
+    const n = parseInt(b.dataset.nav);
+    if (n === 0) { const x = new Date(); calMonth = new Date(x.getFullYear(), x.getMonth(), 1); }
+    else calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() + n, 1);
+    renderCalendar();
+  }));
+}
+function isoOf(d) {
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
+
 async function loadPatterns() {
   const p = await api("/api/patterns");
   const bar = (val, max) => `<span class="bar"><i style="width:${Math.round(100 * val / Math.max(1, max))}%"></i></span>`;
@@ -635,6 +787,7 @@ document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () =>
   if (state.view === "questions") loadQuestions();
   if (state.view === "prospects") loadProspects();
   if (state.view === "patterns") loadPatterns();
+  if (state.view === "calendar") loadCalendar();
 }));
 
 let searchTimer;
@@ -650,7 +803,7 @@ $("search").addEventListener("input", e => {
   $(id).addEventListener("change", loadEvidence));
 ["prCountry", "prStatus"].forEach(id => $(id).addEventListener("change", loadProspects));
 
-/* boot happens after decrypt (static build) */
+loadMeta().then(() => { loadEntities(); loadCalendar(); });
 </script>
 </body>
 </html>
