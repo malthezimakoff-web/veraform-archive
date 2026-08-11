@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Veraform research archive</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='2' y='2' width='12' height='12' rx='1' fill='%23c9a24b'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #14120f; --panel: #1c1915; --panel2: #100e0b; --line: #2e2a22; --line2: #241f18;
+    --text: #e8e1d3; --muted: #a89c85; --dim: #6b5f4c;
+    --accent: #c9a24b; --accent-dim: #8a7038;
+    --ok: #5fae72; --bad: #d16a5a; --warn: #c9a24b;
+    --serif: ui-serif, Georgia, "Times New Roman", serif;
+    --sans: -apple-system, "Segoe UI", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  }
+  :root[data-theme="light"] {
+    --bg: #f6f1e6; --panel: #fffdf8; --panel2: #ede6d4; --line: #ddd2b6; --line2: #e6dcc3;
+    --text: #241f18; --muted: #6b5f4c; --dim: #948763;
+    --accent: #96731f; --accent-dim: #c9a24b;
+    --ok: #2f7a45; --bad: #a83f2a; --warn: #96731f;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #f6f1e6; --panel: #fffdf8; --panel2: #ede6d4; --line: #ddd2b6; --line2: #e6dcc3;
+      --text: #241f18; --muted: #6b5f4c; --dim: #948763;
+      --accent: #96731f; --accent-dim: #c9a24b;
+      --ok: #2f7a45; --bad: #a83f2a; --warn: #96731f;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg); color: var(--text); font: 14px/1.5 var(--sans);
+    display: flex; flex-direction: column;
+  }
+  .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  ::selection { background: var(--accent); color: var(--panel2); }
+
+  header {
+    display: flex; align-items: center; gap: 16px; padding: 12px 20px;
+    border-bottom: 1px solid var(--line); flex-shrink: 0; background: var(--panel);
+  }
+  header h1 {
+    font-family: var(--serif); font-size: 19px; font-weight: 600; letter-spacing: .2px;
+    white-space: nowrap;
+  }
+  header h1 em { font-style: normal; color: var(--accent); }
+  .searchbar {
+    flex: 1; max-width: 520px; position: relative;
+  }
+  .searchbar input {
+    width: 100%; background: var(--panel2); border: 1px solid var(--line); color: var(--text);
+    border-radius: 5px; padding: 8px 12px 8px 30px; font: 13.5px var(--sans);
+  }
+  .searchbar input:focus { outline: none; border-color: var(--accent-dim); }
+  .searchbar svg { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); opacity: .5; }
+  .totals { margin-left: auto; display: flex; gap: 18px; font-size: 12px; color: var(--muted); font-family: var(--mono); }
+  .totals b { color: var(--text); font-weight: 600; }
+  .tabs { display: flex; gap: 2px; }
+  .tab {
+    padding: 6px 14px; border-radius: 5px; font-size: 13px; color: var(--muted); cursor: pointer;
+    border: 1px solid transparent; user-select: none;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { background: var(--panel2); color: var(--accent); border-color: var(--line); font-weight: 600; }
+
+  main { flex: 1; min-height: 0; display: flex; }
+  .view { flex: 1; min-height: 0; display: none; }
+  .view.active { display: flex; }
+
+  /* ---- entities view ---- */
+  #view-entities { }
+  .facets {
+    width: 210px; flex-shrink: 0; border-right: 1px solid var(--line); padding: 16px 14px;
+    overflow-y: auto; background: var(--panel);
+  }
+  .facets h3 { font-size: 10.5px; text-transform: uppercase; letter-spacing: .6px; color: var(--dim); margin-bottom: 8px; }
+  .facets h3 + h3 { margin-top: 18px; }
+  .flist { display: flex; flex-direction: column; gap: 1px; }
+  .fitem {
+    display: flex; justify-content: space-between; gap: 8px; padding: 5px 8px; border-radius: 4px;
+    font-size: 12.5px; color: var(--muted); cursor: pointer;
+  }
+  .fitem:hover { background: var(--panel2); color: var(--text); }
+  .fitem.active { background: var(--panel2); color: var(--accent); font-weight: 600; }
+  .fitem .n { font-family: var(--mono); color: var(--dim); font-size: 11px; }
+  .fitem.active .n { color: var(--accent-dim); }
+
+  .elist { width: 340px; flex-shrink: 0; border-right: 1px solid var(--line); overflow-y: auto; }
+  .erow {
+    padding: 11px 16px; border-bottom: 1px solid var(--line2); cursor: pointer;
+  }
+  .erow:hover { background: var(--panel); }
+  .erow.active { background: var(--panel2); border-left: 3px solid var(--accent); padding-left: 13px; }
+  .erow .nm { font-family: var(--serif); font-size: 14.5px; font-weight: 600; }
+  .erow .meta { display: flex; gap: 8px; align-items: center; margin-top: 3px; font-size: 11px; color: var(--dim); }
+  .erow .sum { font-size: 12px; color: var(--muted); margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+  .badge {
+    display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 3px;
+    border: 1px solid var(--line); color: var(--muted); font-family: var(--mono); white-space: nowrap;
+  }
+  .badge.type-organization { color: var(--accent); border-color: var(--accent-dim); }
+  .badge.stub { color: var(--warn); border-color: var(--warn); opacity: .8; }
+
+  .detail { flex: 1; overflow-y: auto; padding: 28px 36px; min-width: 0; }
+  .detail-empty { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--dim); font-family: var(--serif); font-size: 15px; }
+  .dhead { margin-bottom: 22px; }
+  .dhead .kicker { font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: var(--dim); margin-bottom: 6px; display: flex; gap: 8px; align-items: center; }
+  .dhead h2 { font-family: var(--serif); font-size: 28px; font-weight: 600; text-wrap: balance; line-height: 1.2; }
+  .dhead .aliases { font-size: 12.5px; color: var(--dim); margin-top: 4px; font-style: italic; }
+  .dhead .summary { margin-top: 12px; font-size: 14.5px; color: var(--muted); max-width: 65ch; line-height: 1.6; }
+  .dhead .idline { margin-top: 10px; font-family: var(--mono); font-size: 11px; color: var(--dim); }
+
+  .dsection { margin-top: 30px; }
+  .dsection h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--dim); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+
+  .citation {
+    padding: 14px 16px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+    margin-bottom: 10px; border-left: 3px solid var(--line);
+  }
+  .citation.invalid { opacity: .55; border-left-color: var(--dim); }
+  .citation.high { border-left-color: var(--accent); }
+  .citation .claim { font-size: 14px; line-height: 1.5; margin-bottom: 8px; }
+  .citation .claim .val { font-family: var(--mono); color: var(--accent); font-weight: 600; }
+  .citation .quote {
+    font-family: var(--serif); font-style: italic; font-size: 13px; color: var(--muted);
+    padding-left: 12px; border-left: 2px solid var(--line); margin: 8px 0;
+  }
+  .citation .footline { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 8px; font-size: 11px; color: var(--dim); }
+  .citation .footline a { color: var(--accent-dim); text-decoration: none; }
+  .citation .footline a:hover { text-decoration: underline; color: var(--accent); }
+  .citation .footline .sep { color: var(--line); }
+  .chip { font-family: var(--mono); font-size: 10px; padding: 1px 6px; border-radius: 3px; border: 1px solid var(--line); }
+  .chip.invalidated { color: var(--bad); border-color: var(--bad); }
+  .chip.stale { color: var(--warn); border-color: var(--warn); }
+
+  .edgelist { display: flex; flex-direction: column; gap: 6px; }
+  .edgerow { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 8px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 5px; cursor: pointer; }
+  .edgerow:hover { border-color: var(--accent-dim); }
+  .edgerow .rel { font-family: var(--mono); color: var(--accent-dim); font-size: 11.5px; }
+  .edgerow .tgt { font-family: var(--serif); font-weight: 600; }
+  .edgerow .dir { color: var(--dim); font-size: 11px; }
+
+  /* ---- evidence view ---- */
+  #view-evidence { flex-direction: column; }
+  .ev-toolbar { display: flex; gap: 10px; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .ev-toolbar select { background: var(--panel2); border: 1px solid var(--line); color: var(--text); border-radius: 4px; padding: 5px 8px; font-size: 12.5px; }
+  .ev-toolbar label { font-size: 11.5px; color: var(--muted); display: flex; gap: 5px; align-items: center; }
+  .evlist { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; max-width: 900px; }
+  .evlist .citation .src-entity { font-family: var(--mono); font-size: 10.5px; color: var(--dim); margin-bottom: 6px; }
+
+  /* ---- questions view ---- */
+  /* Block-layout views: the display override must only apply when active,
+     otherwise the ID selector beats .view{display:none} and the hidden view
+     still occupies flex space as a phantom column. */
+  #view-questions.active, #view-patterns.active { display: block; }
+  #view-questions { padding: 24px 32px; overflow-y: auto; max-width: 980px; }
+  .qcard { display: flex; gap: 16px; align-items: flex-start; padding: 14px 0; border-bottom: 1px solid var(--line2); }
+  .qcard .qn { font-family: var(--serif); font-size: 20px; color: var(--dim); min-width: 42px; }
+  .qcard .qbody { flex: 1; }
+  .qcard .qtext { font-size: 14px; margin-bottom: 6px; }
+  .qcard .qbar-row { display: flex; align-items: center; gap: 10px; }
+  .qcard .qbar { flex: 1; max-width: 220px; height: 6px; border-radius: 3px; background: var(--panel2); overflow: hidden; }
+  .qcard .qbar i { display: block; height: 100%; background: var(--accent); }
+  .qcard .qcov { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+
+  .empty { padding: 40px 20px; text-align: center; color: var(--dim); font-family: var(--serif); font-style: italic; }
+  a { color: inherit; }
+
+  /* ---- prospects ---- */
+  .prlist { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; max-width: 940px; }
+  .prcard { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 16px 18px; border-left: 3px solid var(--line); cursor: pointer; }
+  .prcard:hover { border-color: var(--accent-dim); }
+  .prcard.hot { border-left-color: var(--bad); }
+  .prcard.warm { border-left-color: var(--accent); }
+  .prcard.rescore { opacity: .75; }
+  .prhead { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .prhead .nm { font-family: var(--serif); font-size: 17px; font-weight: 650; }
+  .prhead .cc { font-family: var(--mono); font-size: 11px; color: var(--dim); }
+  .prhead .st { font-family: var(--mono); font-size: 10.5px; padding: 1px 7px; border-radius: 3px; border: 1px solid var(--line); color: var(--muted); }
+  .prhead .st.hot { color: var(--bad); border-color: var(--bad); }
+  .prhead .st.warm { color: var(--accent); border-color: var(--accent-dim); }
+  .prhead .money { margin-left: auto; font-family: var(--mono); font-size: 13px; color: var(--accent); }
+  .meters { display: flex; gap: 18px; margin: 9px 0 4px; }
+  .meter { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--dim); }
+  .meter .bar { width: 90px; height: 5px; border-radius: 3px; background: var(--panel2); overflow: hidden; }
+  .meter .bar i { display: block; height: 100%; background: var(--accent); }
+  .meter .v { font-family: var(--mono); color: var(--muted); }
+  .prcard .angle { font-size: 13.5px; margin-top: 6px; line-height: 1.5; }
+  .prcard .angle b { color: var(--accent); font-weight: 600; }
+  .prcard .timing { font-size: 12px; color: var(--muted); margin-top: 4px; font-style: italic; font-family: var(--serif); }
+  .prcard .prfoot { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 9px; font-size: 11px; color: var(--dim); }
+  .prcard .contactline { color: var(--muted); }
+  .prcard .contactline b { color: var(--text); font-weight: 600; }
+
+  /* ---- patterns ---- */
+  #view-patterns { padding: 24px 32px; overflow-y: auto; }
+  .patgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px; max-width: 1200px; }
+  .patcard { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .patcard h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--dim); padding: 10px 14px; border-bottom: 1px solid var(--line); font-weight: 600; }
+  .patrow { display: flex; align-items: center; gap: 10px; padding: 6px 14px; border-bottom: 1px solid var(--line2); font-size: 12.5px; }
+  .patrow:last-child { border-bottom: 0; }
+  .patrow .lbl { min-width: 90px; }
+  .patrow .bar { flex: 1; height: 6px; border-radius: 3px; background: var(--panel2); overflow: hidden; }
+  .patrow .bar i { display: block; height: 100%; background: var(--accent); }
+  .patrow .v { font-family: var(--mono); font-size: 11.5px; color: var(--muted); min-width: 110px; text-align: right; }
+  .vchip { display: inline-block; font-family: var(--mono); font-size: 10px; padding: 1px 6px; border-radius: 3px; background: var(--panel2); color: var(--accent-dim); border: 1px solid var(--line); margin-right: 3px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>research <em>archive</em></h1>
+  <div class="searchbar">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.5" stroke="currentColor"/><path d="M9.5 9.5L13 13" stroke="currentColor" stroke-linecap="round"/></svg>
+    <input id="search" type="text" placeholder="search entities, claims, sources…">
+  </div>
+  <div class="tabs">
+    <div class="tab active" data-view="entities">Entities</div>
+    <div class="tab" data-view="prospects">Prospects</div>
+    <div class="tab" data-view="evidence">Evidence</div>
+    <div class="tab" data-view="questions">Questions</div>
+    <div class="tab" data-view="patterns">Patterns</div>
+  </div>
+  <div class="totals" id="totals"></div>
+</header>
+
+<main>
+  <div class="view active" id="view-entities">
+    <div class="facets">
+      <h3>Type</h3>
+      <div class="flist" id="typeFacets"></div>
+      <h3>Country</h3>
+      <div class="flist" id="countryFacets"></div>
+      <h3>Vector</h3>
+      <div class="flist" id="vectorFacets"></div>
+      <h3>Status</h3>
+      <div class="flist" id="statusFacets">
+        <div class="fitem active" data-status="">All active</div>
+        <div class="fitem" data-status="stub">Stubs only</div>
+      </div>
+    </div>
+    <div class="elist" id="entityList"></div>
+    <div class="detail-empty" id="detailEmpty">Select an entity to read its dossier</div>
+    <div class="detail" id="detail" style="display:none"></div>
+  </div>
+
+  <div class="view" id="view-prospects">
+    <div style="flex:1; display:flex; flex-direction:column; min-width:0;">
+      <div class="ev-toolbar">
+        <label>Country <select id="prCountry"><option value="">any</option></select></label>
+        <label>Status <select id="prStatus"><option value="">any</option>
+          <option value="hot">hot</option><option value="warm">warm</option>
+          <option value="candidate">candidate</option><option value="parked">parked</option>
+          <option value="rejected">rejected</option></select></label>
+        <span style="margin-left:auto;font-size:11.5px;color:var(--dim)">ranked by interest × money · every score cites evidence</span>
+      </div>
+      <div class="prlist" id="prList"></div>
+    </div>
+  </div>
+
+  <div class="view" id="view-evidence">
+    <div style="flex:1; display:flex; flex-direction:column; min-width:0;">
+      <div class="ev-toolbar">
+        <label>Question <select id="evQuestion"><option value="">any</option></select></label>
+        <label>Country <select id="evCountry"><option value="">any</option></select></label>
+        <label>Vector <select id="evVector"><option value="">any</option></select></label>
+        <label>Stakes <select id="evStakes"><option value="">any</option><option value="high">high</option><option value="low">low</option></select></label>
+        <label><input type="checkbox" id="evValidOnly" checked> valid only</label>
+      </div>
+      <div class="evlist" id="evList"></div>
+    </div>
+  </div>
+
+  <div class="view" id="view-questions"></div>
+
+  <div class="view" id="view-patterns"></div>
+</main>
+
+
+<script>
+// ---- static build: key gate + in-memory API resolver ----
+// The server API is replaced by a decrypted in-browser bundle. The fetch
+// path strings stay identical so the UI code is unchanged.
+window.__ARCHIVE__ = null;
+
+function b64ToBytes(u8) { return u8; }
+
+async function deriveKey(pass, salt) {
+  const enc = new TextEncoder();
+  const base = await crypto.subtle.importKey("raw", enc.encode(pass), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey(
+    { name: "PBKDF2", salt, iterations: 310000, hash: "SHA-256" },
+    base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+}
+
+async function tryDecrypt(pass) {
+  const buf = await (await fetch("data.enc")).arrayBuffer();
+  const bytes = new Uint8Array(buf);
+  const salt = bytes.slice(0, 16), iv = bytes.slice(16, 28), ct = bytes.slice(28);
+  const key = await deriveKey(pass, salt);
+  const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ct);
+  return JSON.parse(new TextDecoder().decode(plain));
+}
+
+function gateHtml() {
+  return `<div id="gate" style="position:fixed;inset:0;background:#14120f;display:flex;align-items:center;justify-content:center;z-index:999">
+    <form id="gateForm" style="background:#1c1915;border:1px solid #2e2a22;border-radius:8px;padding:32px 36px;width:340px;font:15px/1.5 -apple-system,system-ui,sans-serif;color:#e8e1d3">
+      <h1 style="font-family:ui-serif,Georgia,serif;font-size:19px;margin:0 0 6px">research <em style="font-style:normal;color:#c9a24b">archive</em></h1>
+      <p style="color:#a89c85;font-size:13px;margin:0 0 18px">Enter the access key. Data is encrypted; nothing renders without it.</p>
+      <input id="gateKey" type="password" autocomplete="current-password" placeholder="access key" style="width:100%;box-sizing:border-box;background:#100e0b;border:1px solid #2e2a22;color:#e8e1d3;border-radius:5px;padding:10px 12px;font-size:14px">
+      <button type="submit" style="margin-top:14px;width:100%;background:#c9a24b;color:#14120f;border:0;border-radius:5px;padding:10px;font-size:14px;font-weight:600;cursor:pointer">Decrypt</button>
+      <div id="gateErr" style="color:#d16a5a;font-size:12.5px;margin-top:10px"></div>
+    </form></div>`;
+}
+
+async function unlock(pass) {
+  window.__ARCHIVE__ = await tryDecrypt(pass);
+  sessionStorage.setItem("archive_pass", pass);
+  const g = document.getElementById("gate");
+  if (g) g.remove();
+  loadMeta().then(loadEntities);
+}
+
+window.addEventListener("DOMContentLoaded", async () => {
+  document.body.insertAdjacentHTML("beforeend", gateHtml());
+  document.getElementById("gateForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const pass = document.getElementById("gateKey").value.trim();
+    try { await unlock(pass); }
+    catch (err) { document.getElementById("gateErr").textContent = "Wrong key (or corrupted download)."; }
+  });
+  const saved = sessionStorage.getItem("archive_pass");
+  if (saved) { try { await unlock(saved); } catch (e) { sessionStorage.removeItem("archive_pass"); } }
+  document.getElementById("gateKey").focus();
+});
+
+// In-memory implementations of the server endpoints, over the decrypted bundle.
+function staticApi(path) {
+  const A = window.__ARCHIVE__;
+  if (!A) throw new Error("locked");
+  const u = new URL(path, location.origin);
+  const q = u.searchParams;
+  const g = k => (q.get(k) || "").trim();
+  const has = (arr, v) => (arr || []).includes(v);
+  const sub = (s, needle) => (s || "").toLowerCase().includes(needle.toLowerCase());
+
+  if (u.pathname === "/api/meta") return A.meta;
+  if (u.pathname === "/api/questions") return A.questions;
+  if (u.pathname === "/api/patterns") return A.patterns;
+  if (u.pathname.startsWith("/api/entity/")) {
+    const d = A.entity_details[u.pathname.split("/").pop()];
+    if (!d) throw new Error(404);
+    return d;
+  }
+  if (u.pathname === "/api/entities") {
+    const search = g("search"), type = g("type"), status = g("status"),
+          country = g("country").toUpperCase(), vector = g("vector").toLowerCase();
+    return A.entities.filter(e =>
+      (!search || sub(e.name, search) || sub(e.summary, search) || sub((e.aliases_text || ""), search)) &&
+      (!type || e.type === type) &&
+      (!country || e.country === country) &&
+      (!vector || has(e.vectors, vector)) &&
+      (status ? e.status === status : e.status !== "merged"));
+  }
+  if (u.pathname === "/api/evidence") {
+    const search = g("search"), gref = g("golden_ref"), stakes = g("stakes"),
+          validOnly = g("valid_only") === "1",
+          country = g("country").toUpperCase(), vector = g("vector").toLowerCase();
+    return A.evidence.filter(e =>
+      (!search || sub(e.claim, search) || sub(e.quote, search)) &&
+      (!gref || has(e.golden_refs, parseInt(gref))) &&
+      (!stakes || e.stakes === stakes) &&
+      (!validOnly || !e.invalid_at) &&
+      (!country || e.entity_country === country) &&
+      (!vector || has(e.vectors, vector) || has(e.entity_vectors, vector))).slice(0, 500);
+  }
+  if (u.pathname === "/api/prospects") {
+    const country = g("country").toUpperCase(), status = g("status");
+    return A.prospects.filter(p =>
+      (!country || p.country === country) && (!status || p.status === status));
+  }
+  throw new Error(404);
+}
+</script>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let state = { view: "entities", search: "", type: "", status: "", country: "", vector: "", selectedEntity: null, meta: null };
+const fmtDkk = v => v >= 1e6 ? "~" + (v / 1e6).toFixed(1) + "M DKK/yr" : "~" + Math.round(v / 1e3) + "k DKK/yr";
+
+function fmtDate(d) { return d ? d.slice(0, 10) : ""; }
+
+async function api(path) {
+  return staticApi(path);
+}
+
+async function loadMeta() {
+  const m = await api("/api/meta");
+  state.meta = m;
+  $("totals").innerHTML =
+    `<span><b class="num">${m.totals.entities}</b> entities</span>` +
+    `<span><b class="num">${m.totals.evidence}</b> claims</span>` +
+    `<span><b class="num">${m.totals.prospects}</b> prospects</span>`;
+  document.title = `research archive · ${m.domain}`;
+  const facet = (elId, items, key, allLabel, total, stateKey) => {
+    $(elId).innerHTML = `<div class="fitem active" data-v="">${allLabel}<span class="n">${total}</span></div>` +
+      items.map(t => `<div class="fitem" data-v="${esc(t[key])}">${esc(t[key])}<span class="n">${t.n}</span></div>`).join("");
+    $(elId).querySelectorAll(".fitem").forEach(el => el.addEventListener("click", () => {
+      state[stateKey] = el.dataset.v;
+      $(elId).querySelectorAll(".fitem").forEach(x => x.classList.toggle("active", x === el));
+      loadEntities();
+    }));
+  };
+  facet("typeFacets", m.types, "type", "All types", m.totals.entities, "type");
+  facet("countryFacets", m.countries, "country", "Anywhere", m.totals.entities, "country");
+  facet("vectorFacets", m.vectors, "vector", "All vectors", m.totals.entities, "vector");
+  $("statusFacets").querySelectorAll(".fitem").forEach(el => el.addEventListener("click", () => {
+    state.status = el.dataset.status;
+    $("statusFacets").querySelectorAll(".fitem").forEach(x => x.classList.toggle("active", x === el));
+    loadEntities();
+  }));
+  // Populate toolbar selects once
+  [["prCountry", m.countries, "country"], ["evCountry", m.countries, "country"], ["evVector", m.vectors, "vector"]]
+    .forEach(([id, items, key]) => {
+      const sel = $(id);
+      if (sel.options.length > 1) return;
+      items.forEach(t => {
+        const o = document.createElement("option");
+        o.value = t[key]; o.textContent = `${t[key]} (${t.n})`;
+        sel.appendChild(o);
+      });
+    });
+}
+
+function entityRowHtml(e) {
+  const cls = e.status === "stub" ? '<span class="badge stub">stub</span>' : "";
+  const cc = e.country ? `<span class="badge">${esc(e.country)}</span>` : "";
+  const vecs = (e.vectors || []).map(v => `<span class="vchip">${esc(v)}</span>`).join("");
+  return `<div class="erow${state.selectedEntity === e.id ? " active" : ""}" data-id="${e.id}">
+    <div class="nm">${esc(e.name)}</div>
+    <div class="meta"><span class="badge type-${esc(e.type)}">${esc(e.type)}</span>${cc}${cls}
+      <span>${e.evidence_n} claim${e.evidence_n === 1 ? "" : "s"}</span>
+      ${e.edge_n ? `<span>· ${e.edge_n} link${e.edge_n === 1 ? "" : "s"}</span>` : ""}
+      ${vecs}
+    </div>
+    ${e.summary ? `<div class="sum">${esc(e.summary)}</div>` : ""}
+  </div>`;
+}
+
+async function loadEntities() {
+  const q = new URLSearchParams({ search: state.search, type: state.type, status: state.status,
+                                  country: state.country, vector: state.vector });
+  const list = await api("/api/entities?" + q);
+  $("entityList").innerHTML = list.length ? list.map(entityRowHtml).join("")
+    : `<div class="empty">No entities match.</div>`;
+  $("entityList").querySelectorAll(".erow").forEach(el =>
+    el.addEventListener("click", () => selectEntity(parseInt(el.dataset.id))));
+  if (state.selectedEntity && !list.find(e => e.id === state.selectedEntity)) {
+    state.selectedEntity = null;
+    $("detail").style.display = "none";
+    $("detailEmpty").style.display = "flex";
+  }
+}
+
+function citationHtml(e, showEntity) {
+  const chips = [];
+  if (e.stakes === "high") chips.push(`<span class="chip">high-stakes</span>`);
+  if (e.invalid_at) chips.push(`<span class="chip invalidated">invalidated</span>`);
+  if (e.needs_reverify) chips.push(`<span class="chip stale">needs re-verify</span>`);
+  const val = (e.value_num != null) ? ` <span class="val">${e.value_num}${e.unit ? " " + esc(e.unit) : ""}</span>` : "";
+  return `<div class="citation${e.invalid_at ? " invalid" : ""}${e.stakes === "high" ? " high" : ""}">
+    ${showEntity ? `<div class="src-entity">${esc(e.entity_name || "—")}</div>` : ""}
+    <div class="claim">${esc(e.claim)}${val}</div>
+    ${e.quote ? `<div class="quote">"${esc(e.quote)}"</div>` : ""}
+    <div class="footline">
+      <span>${fmtDate(e.retrieved_at)}</span>
+      ${e.source_host ? `<span class="sep">·</span><a href="${esc(e.source_url)}" target="_blank" rel="noopener">${esc(e.source_host)}</a>` : ""}
+      ${chips.length ? `<span class="sep">·</span>${chips.join(" ")}` : ""}
+    </div>
+  </div>`;
+}
+
+async function selectEntity(id) {
+  state.selectedEntity = id;
+  $("entityList").querySelectorAll(".erow").forEach(el => el.classList.toggle("active", parseInt(el.dataset.id) === id));
+  const d = await api("/api/entity/" + id);
+  $("detailEmpty").style.display = "none";
+  const det = $("detail");
+  det.style.display = "block";
+  const aliases = (d.aliases || []).filter(a => a !== d.name);
+  det.innerHTML = `
+    <div class="dhead">
+      <div class="kicker"><span class="badge type-${esc(d.type)}">${esc(d.type)}</span>${d.country ? `<span class="badge">${esc(d.country)}</span>` : ""}${d.classification ? `<span>${esc(d.classification)}</span>` : ""}${(d.vectors || []).map(v => `<span class="vchip">${esc(v)}</span>`).join("")}${d.status === "stub" ? '<span class="badge stub">stub</span>' : ""}</div>
+      <h2>${esc(d.name)}</h2>
+      ${aliases.length ? `<div class="aliases">also known as ${aliases.map(esc).join(", ")}</div>` : ""}
+      ${d.summary ? `<div class="summary">${esc(d.summary)}</div>` : ""}
+      <div class="idline">#${d.id}${d.registry_id ? ` · ${esc(d.registry_id)}` : ""}</div>
+    </div>
+    ${d.prospect ? `<div class="dsection">
+      <h3>Prospect assessment</h3>
+      <div class="prcard ${esc(d.prospect.status)}${d.prospect.needs_rescore ? " rescore" : ""}" style="cursor:default">
+        <div class="prhead"><span class="st ${esc(d.prospect.status)}">${esc(d.prospect.status)}</span>
+          ${d.prospect.needs_rescore ? '<span class="st">needs rescore</span>' : ""}
+          ${d.prospect.money_dkk ? `<span class="money">${fmtDkk(d.prospect.money_dkk)}</span>` : ""}</div>
+        <div class="meters">
+          <div class="meter">interest <span class="bar"><i style="width:${Math.round(100 * (d.prospect.interest || 0))}%"></i></span><span class="v">${(d.prospect.interest || 0).toFixed(2)}</span></div>
+          <div class="meter">money <span class="bar"><i style="width:${Math.round(100 * (d.prospect.money || 0))}%"></i></span><span class="v">${(d.prospect.money || 0).toFixed(2)}</span></div>
+        </div>
+        ${d.prospect.angle ? `<div class="angle"><b>Angle:</b> ${esc(d.prospect.angle)}</div>` : ""}
+        ${d.prospect.timing ? `<div class="timing">${esc(d.prospect.timing)}</div>` : ""}
+        ${d.prospect.rationale ? `<div class="angle" style="color:var(--muted);font-size:12.5px;margin-top:6px">${esc(d.prospect.rationale)}</div>` : ""}
+        <div class="prfoot"><span>evidence: ${d.prospect.evidence_refs.map(r => "#" + r).join(", ") || "none"}</span><span class="sep">·</span><span>scored ${fmtDate(d.prospect.scored_at)} by ${esc(d.prospect.scored_by || "?")}</span></div>
+      </div>
+    </div>` : ""}
+    ${(d.contacts && d.contacts.length) ? `<div class="dsection">
+      <h3>Contacts (${d.contacts.length})</h3>
+      <div class="edgelist">${d.contacts.map(c => `<div class="edgerow" style="cursor:default"><span class="tgt">${esc(c.name)}</span><span class="rel">${esc(c.attrs.role || "")}</span><span class="dir">${esc(c.attrs.email || c.attrs.linkedin || "")}</span></div>`).join("")}</div>
+    </div>` : ""}
+    <div class="dsection">
+      <h3>Evidence (${d.evidence.length})</h3>
+      ${d.evidence.length ? d.evidence.map(e => citationHtml(e, false)).join("") : `<div class="empty">No claims recorded yet.</div>`}
+    </div>
+    ${(d.edges_out.length || d.edges_in.length) ? `<div class="dsection">
+      <h3>Relationships (${d.edges_out.length + d.edges_in.length})</h3>
+      <div class="edgelist">
+        ${d.edges_out.map(e => `<div class="edgerow" data-id="${e.target_id}"><span class="dir">→</span><span class="rel">${esc(e.rel)}</span><span class="tgt">${esc(e.target_name)}</span></div>`).join("")}
+        ${d.edges_in.map(e => `<div class="edgerow" data-id="${e.origin_id}"><span class="dir">←</span><span class="rel">${esc(e.rel)}</span><span class="tgt">${esc(e.origin_name)}</span></div>`).join("")}
+      </div>
+    </div>` : ""}
+  `;
+  det.querySelectorAll(".edgerow").forEach(el => el.addEventListener("click", () => selectEntity(parseInt(el.dataset.id))));
+}
+
+async function loadEvidence() {
+  const q = new URLSearchParams({
+    search: state.search, golden_ref: $("evQuestion").value, stakes: $("evStakes").value,
+    valid_only: $("evValidOnly").checked ? "1" : "0",
+    country: $("evCountry").value, vector: $("evVector").value });
+  const list = await api("/api/evidence?" + q);
+  $("evList").innerHTML = list.length ? list.map(e => citationHtml(e, true)).join("")
+    : `<div class="empty">No claims match.</div>`;
+}
+
+async function loadProspects() {
+  const q = new URLSearchParams({ country: $("prCountry").value, status: $("prStatus").value });
+  const list = await api("/api/prospects?" + q);
+  $("prList").innerHTML = list.length ? list.map(p => `
+    <div class="prcard ${esc(p.status)}${p.needs_rescore ? " rescore" : ""}" data-id="${p.entity_id}">
+      <div class="prhead">
+        <span class="nm">${esc(p.name)}</span>
+        <span class="cc">${esc(p.country || "--")}</span>
+        ${(p.vectors || []).map(v => `<span class="vchip">${esc(v)}</span>`).join("")}
+        <span class="st ${esc(p.status)}">${esc(p.status)}</span>
+        ${p.needs_rescore ? '<span class="st">needs rescore</span>' : ""}
+        ${p.money_dkk ? `<span class="money">${fmtDkk(p.money_dkk)}</span>` : ""}
+      </div>
+      <div class="meters">
+        <div class="meter">interest <span class="bar"><i style="width:${Math.round(100 * (p.interest || 0))}%"></i></span><span class="v">${(p.interest || 0).toFixed(2)}</span></div>
+        <div class="meter">money <span class="bar"><i style="width:${Math.round(100 * (p.money || 0))}%"></i></span><span class="v">${(p.money || 0).toFixed(2)}</span></div>
+      </div>
+      ${p.angle ? `<div class="angle"><b>Angle:</b> ${esc(p.angle)}</div>` : ""}
+      ${p.timing ? `<div class="timing">${esc(p.timing)}</div>` : ""}
+      <div class="prfoot">
+        ${p.contacts.length ? `<span class="contactline">contact: ${p.contacts.map(c => `<b>${esc(c.name)}</b>${c.attrs.role ? " (" + esc(c.attrs.role) + ")" : ""}`).join(", ")}</span>` : `<span>no contact yet</span>`}
+        <span class="sep">·</span><span>evidence: ${p.evidence_refs.map(r => "#" + r).join(", ") || "none"}</span>
+      </div>
+    </div>`).join("") : `<div class="empty">No prospects scored yet. The prospector runs after research rounds.</div>`;
+  $("prList").querySelectorAll(".prcard").forEach(el => el.addEventListener("click", () => {
+    document.querySelector('.tab[data-view="entities"]').click();
+    selectEntity(parseInt(el.dataset.id));
+  }));
+}
+
+async function loadPatterns() {
+  const p = await api("/api/patterns");
+  const bar = (val, max) => `<span class="bar"><i style="width:${Math.round(100 * val / Math.max(1, max))}%"></i></span>`;
+  const maxEnt = Math.max(1, ...p.by_country.map(r => r.entities));
+  const maxVec = Math.max(1, ...p.by_vector.map(r => r.entities));
+  const maxCls = Math.max(1, ...p.classifications.map(r => r.n));
+  $("view-patterns").innerHTML = `<div class="patgrid">
+    <div class="patcard"><h3>By country · entities / claims / pipeline DKK</h3>
+      ${p.by_country.map(r => `<div class="patrow"><span class="lbl num">${esc(r.country)}</span>${bar(r.entities, maxEnt)}
+        <span class="v">${r.entities} · ${r.evidence}${r.money_dkk ? " · " + fmtDkk(r.money_dkk) : ""}</span></div>`).join("")}
+    </div>
+    <div class="patcard"><h3>By simulation vector · entities / claims</h3>
+      ${p.by_vector.map(r => `<div class="patrow"><span class="lbl">${esc(r.vector)}</span>${bar(r.entities, maxVec)}
+        <span class="v">${r.entities} · ${r.evidence}</span></div>`).join("")}
+    </div>
+    <div class="patcard"><h3>Prospect funnel</h3>
+      ${p.prospect_funnel.length ? p.prospect_funnel.map(r => `<div class="patrow"><span class="lbl">${esc(r.status)}</span>
+        <span class="v" style="text-align:left;min-width:0">${r.n}${r.money_dkk ? " · " + fmtDkk(r.money_dkk) : ""}</span></div>`).join("")
+        : `<div class="empty">No prospects scored yet.</div>`}
+    </div>
+    <div class="patcard"><h3>Organization roles</h3>
+      ${p.classifications.map(r => `<div class="patrow"><span class="lbl" style="min-width:180px">${esc(r.classification)}</span>${bar(r.n, maxCls)}
+        <span class="v">${r.n}</span></div>`).join("")}
+    </div>
+    <div class="patcard"><h3>Source reliability (learned)</h3>
+      ${p.sources.slice(0, 12).map(r => `<div class="patrow"><span class="lbl" style="min-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.host)}</span>
+        <span class="v" style="color:${r.reliability >= 0.7 ? "var(--ok)" : r.reliability >= 0.45 ? "var(--warn)" : "var(--bad)"}">${Number(r.reliability).toFixed(2)} (${r.checks} checks)</span></div>`).join("")}
+    </div>
+  </div>`;
+}
+
+async function loadQuestions() {
+  const qs = await api("/api/questions");
+  const maxCov = Math.max(1, ...qs.map(q => q.coverage));
+  $("view-questions").innerHTML = qs.map(q => `<div class="qcard">
+    <div class="qn">${String(q.num).padStart(2, "0")}</div>
+    <div class="qbody">
+      <div class="qtext">${esc(q.question)}</div>
+      <div class="qbar-row"><div class="qbar"><i style="width:${Math.round(100 * q.coverage / maxCov)}%"></i></div>
+      <span class="qcov">${q.coverage} claim${q.coverage === 1 ? "" : "s"}</span></div>
+    </div>
+  </div>`).join("");
+  const sel = $("evQuestion");
+  if (sel.options.length <= 1) {
+    qs.forEach(q => {
+      const o = document.createElement("option");
+      o.value = q.num; o.textContent = `Q${q.num} (${q.coverage})`;
+      sel.appendChild(o);
+    });
+  }
+}
+
+document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => {
+  document.querySelectorAll(".tab").forEach(x => x.classList.toggle("active", x === t));
+  document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + t.dataset.view));
+  state.view = t.dataset.view;
+  if (state.view === "evidence") loadEvidence();
+  if (state.view === "questions") loadQuestions();
+  if (state.view === "prospects") loadProspects();
+  if (state.view === "patterns") loadPatterns();
+}));
+
+let searchTimer;
+$("search").addEventListener("input", e => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    state.search = e.target.value.trim();
+    if (state.view === "entities") loadEntities();
+    else if (state.view === "evidence") loadEvidence();
+  }, 220);
+});
+["evQuestion", "evStakes", "evValidOnly", "evCountry", "evVector"].forEach(id =>
+  $(id).addEventListener("change", loadEvidence));
+["prCountry", "prStatus"].forEach(id => $(id).addEventListener("change", loadProspects));
+
+/* boot happens after decrypt (static build) */
+</script>
+</body>
+</html>
