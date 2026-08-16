@@ -211,6 +211,32 @@
   .ck-health { display: flex; gap: 18px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
   .ck-health b { font-family: var(--mono); color: var(--text); }
   .ck-health .zero { color: var(--bad); }
+  /* the decision register: healthy = visible-but-calm */
+  .decgrid { display: grid; gap: 8px; }
+  .deccard { background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+    border-left: 3px solid var(--line); padding: 10px 14px; }
+  .deccard.decided { border-left-color: var(--ok); }
+  .deccard.suspect { border-left-color: var(--bad); box-shadow: inset 0 0 0 1px rgba(209,106,90,.3); }
+  .deccard .drow { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .deccard .dref { font-family: var(--serif); font-weight: 700; font-size: 15px; }
+  .deccard .dst { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .5px;
+    padding: 1px 7px; border-radius: 3px; border: 1px solid var(--line); color: var(--muted); }
+  .deccard.decided .dst { color: var(--ok); border-color: var(--ok); }
+  .deccard.suspect .dst { color: var(--bad); border-color: var(--bad); }
+  .deccard .dstmt { font-size: 12.5px; flex: 1; min-width: 220px; }
+  .deccard .dguard { font-family: var(--mono); font-size: 10.5px; color: var(--dim); white-space: nowrap; }
+  .deccard .dguard b { color: var(--accent); }
+  .deccard .dnote { font-size: 11.5px; color: var(--muted); margin-top: 5px; }
+  .hyprow { display: flex; gap: 8px; align-items: baseline; font-size: 12px; padding: 5px 0;
+    border-bottom: 1px solid var(--line2, var(--line)); }
+  .hyprow:last-child { border-bottom: none; }
+  .hyprow .hq { font-family: var(--mono); font-size: 10.5px; color: var(--dim); min-width: 34px; }
+  .hyprow .hscore { font-family: var(--mono); font-size: 10.5px; white-space: nowrap; }
+  .hyprow .hscore .hi { color: var(--bad); }
+  .hyprow .hscore .hc { color: var(--ok); }
+  .hyprow .hstmt { flex: 1; min-width: 200px; color: var(--muted); }
+  .hyprow.leader .hstmt { color: var(--text); }
+  .hyprow.eliminated { opacity: .45; text-decoration: line-through; }
   /* the crew: the engine's roles, visible */
   .crewgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
   .crewcard { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 11px 13px; }
@@ -1070,6 +1096,22 @@ async function loadCockpit() {
     <div class="ck-band"><h2>Act now<span class="n">${c.act_now.length}</span></h2>${actHtml}</div>
     <div class="ck-band"><h2>Sellable-now matrix<span class="n">market heat × capability ceiling</span></h2>${matrixHtml}</div>
     <div class="ck-band"><h2>Plays<span class="n">${c.plays.length} open</span></h2>${lanesHtml}</div>
+    ${(c.decisions && c.decisions.length) ? `<div class="ck-band"><h2>Decisions<span class="n">the register — green means decided and guarded</span></h2>
+      <div class="decgrid">${c.decisions.map(d => `
+        <div class="deccard ${esc(d.status)}">
+          <div class="drow"><span class="dref">${esc(d.ref)}</span><span class="dst">${esc(d.status)}</span>
+            <span class="dstmt">${esc(d.statement)}</span>
+            <span class="dguard">${d.linchpins ? `<b>${d.linchpins}</b> linchpin${d.linchpins === 1 ? "" : "s"} · ` : ""}${d.evidence_links || 0} ev${d.owner ? ` · ${esc(d.owner)}` : ""}${d.decided_at ? ` · ${esc(d.decided_at.slice(0, 10))}` : ""}</span></div>
+          ${d.status === "suspect" ? `<div class="dnote">!! ${esc(d.suspect_reason || "")}</div>` : (d.review_note ? `<div class="dnote">${esc(d.review_note)}</div>` : (!d.evidence_links ? `<div class="dnote">unlinked — no evidence guards this decision yet</div>` : ""))}
+        </div>`).join("")}</div>
+      ${(c.hypotheses && c.hypotheses.length) ? `<h2 style="margin-top:18px">Live hypotheses<span class="n">ranked by inconsistencies — fewest survive</span></h2>
+      <div class="ck-card">${c.hypotheses.map((h, i, arr) => `
+        <div class="hyprow${h.status === "eliminated" ? " eliminated" : ""}${(i === 0 || arr[i-1].question_num !== h.question_num) && h.status !== "eliminated" ? " leader" : ""}">
+          <span class="hq">Q${h.question_num || "?"}</span>
+          <span class="hscore"><span class="hi">I=${h.i || 0}</span> <span class="hc">C=${h.c || 0}</span> N=${h.n || 0}</span>
+          <span class="hstmt">${esc(h.statement)}</span>
+        </div>`).join("")}</div>` : ""}
+    </div>` : ""}
     <div class="ck-band"><h2>The crew<span class="n">who worked, what they left, what waits</span></h2>${crewHtml}</div>
     ${(c.cleanup && c.cleanup.length) ? `<div class="ck-band"><h2>Cleanup<span class="n">deadlines that passed unclosed — close or roll them, no drama</span></h2>
       <details><summary class="showmore">${c.cleanup.length} unclosed past-due item(s) · ${fmtAmt(c.cleanup.reduce((s, a) => s + (a.amount_dkk || 0), 0))} DKK ▾</summary>
