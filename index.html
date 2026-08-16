@@ -167,6 +167,50 @@
   .qcard .qbar i { display: block; height: 100%; background: var(--accent); }
   .qcard .qcov { font-family: var(--mono); font-size: 12px; color: var(--muted); }
 
+  /* ---- cockpit ---- */
+  #view-cockpit.active { display: block; }
+  #view-cockpit { overflow-y: auto; padding: 20px 24px 60px; }
+  .ck-band { margin-bottom: 26px; max-width: 1100px; }
+  .ck-band > h2 { font-family: var(--serif); font-size: 17px; font-weight: 650; margin-bottom: 10px; }
+  .ck-band > h2 .n { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-left: 8px; }
+  .ck-card { background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+    border-left: 3px solid var(--line); padding: 11px 14px; margin-bottom: 8px; }
+  .ck-card.u3 { border-left-color: var(--bad); }
+  .ck-card.u2 { border-left-color: var(--accent); }
+  .ck-card .row1 { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .ck-card .kind { font-family: var(--mono); font-size: 10px; text-transform: uppercase;
+    letter-spacing: .5px; color: var(--dim); border: 1px solid var(--line); border-radius: 3px; padding: 1px 6px; }
+  .ck-card .lbl { font-size: 13px; font-weight: 600; flex: 1; min-width: 200px; }
+  .ck-card .det { font-size: 12px; color: var(--muted); margin-top: 5px; line-height: 1.45; }
+  .ck-cmd { display: flex; gap: 8px; align-items: center; margin-top: 7px; }
+  .ck-cmd code { flex: 1; min-width: 0; font-family: var(--mono); font-size: 10.5px; color: var(--accent-dim);
+    background: var(--panel2); border: 1px solid var(--line); border-radius: 4px; padding: 4px 8px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ck-cmd button { font-family: var(--mono); font-size: 10.5px; background: var(--panel2);
+    border: 1px solid var(--line); border-radius: 4px; color: var(--muted); padding: 4px 10px; cursor: pointer; }
+  .ck-cmd button:hover { color: var(--accent); border-color: var(--accent-dim); }
+  .ck-table { width: 100%; border-collapse: collapse; font-size: 12.5px; background: var(--panel);
+    border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .ck-table th { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .5px;
+    color: var(--dim); text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  .ck-table td { padding: 7px 10px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  .ck-table tr:last-child td { border-bottom: none; }
+  .ceil { font-family: var(--mono); font-size: 10.5px; padding: 1px 7px; border-radius: 3px; }
+  .ceil.good { color: var(--ok); border: 1px solid var(--ok); }
+  .ceil.mid { color: var(--accent); border: 1px solid var(--accent-dim); }
+  .ceil.none { color: var(--bad); border: 1px solid var(--bad); }
+  .ck-lanes { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+  .ck-lane { background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 9px; min-height: 60px; }
+  .ck-lane h4 { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .5px;
+    color: var(--dim); margin-bottom: 7px; }
+  .playcard { background: var(--panel); border: 1px solid var(--line); border-radius: 5px;
+    padding: 8px 10px; margin-bottom: 6px; font-size: 12px; }
+  .playcard.stalled { border-left: 3px solid var(--bad); }
+  .playcard .nm { font-weight: 600; }
+  .playcard .nx { color: var(--muted); font-size: 11px; margin-top: 3px; }
+  .ck-health { display: flex; gap: 18px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
+  .ck-health b { font-family: var(--mono); color: var(--text); }
+  .ck-health .zero { color: var(--bad); }
   /* ---- calendar ---- */
   #view-calendar.active { display: flex; }
   #view-calendar { gap: 0; min-height: 0; }
@@ -211,6 +255,15 @@
   .sumbar { display: flex; gap: 16px; margin-bottom: 16px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
   .sumbar b { color: var(--text); font-family: var(--mono); }
   .sumbar .warn b { color: var(--bad); }
+  /* urgency markers: one model (db.milestone_urgency) rendered everywhere */
+  .urg { font-family: var(--mono); font-size: 11px; font-weight: 700; white-space: nowrap; letter-spacing: 1px; }
+  .urg-3 { color: var(--bad); }
+  .urg-2 { color: var(--accent); }
+  .urg-1 { color: var(--dim); }
+  .mile.urg-3:not(.overdue) { border-left-color: var(--bad); box-shadow: inset 0 0 0 1px rgba(209,106,90,.35); }
+  .mile.urg-2:not(.overdue) { border-left-color: var(--accent); }
+  .ev-chip.urg-3:not(.overdue) { border-left-width: 4px; border-left-color: var(--bad); background: rgba(209,106,90,.14); font-weight: 600; }
+  .ev-chip.urg-2:not(.overdue) { border-left-width: 4px; }
 
   .empty { padding: 40px 20px; text-align: center; color: var(--dim); font-family: var(--serif); font-style: italic; }
   a { color: inherit; }
@@ -263,7 +316,8 @@
     <input id="search" type="text" placeholder="search entities, claims, sources…">
   </div>
   <div class="tabs">
-    <div class="tab active" data-view="calendar">Calendar</div>
+    <div class="tab active" data-view="cockpit">Cockpit</div>
+    <div class="tab" data-view="calendar">Calendar</div>
     <div class="tab" data-view="entities">Entities</div>
     <div class="tab" data-view="prospects">Prospects</div>
     <div class="tab" data-view="evidence">Evidence</div>
@@ -293,7 +347,8 @@
     <div class="detail" id="detail" style="display:none"></div>
   </div>
 
-  <div class="view active" id="view-calendar"></div>
+  <div class="view active" id="view-cockpit"></div>
+  <div class="view" id="view-calendar"></div>
 
   <div class="view" id="view-prospects">
     <div style="flex:1; display:flex; flex-direction:column; min-width:0;">
@@ -369,7 +424,7 @@ async function unlock(pass) {
   sessionStorage.setItem("archive_pass", pass);
   const g = document.getElementById("gate");
   if (g) g.remove();
-  loadMeta().then(loadEntities);
+  loadMeta().then(() => { loadEntities(); loadCockpit(); });
 }
 
 window.addEventListener("DOMContentLoaded", async () => {
@@ -399,6 +454,7 @@ function staticApi(path) {
   if (u.pathname === "/api/questions") return A.questions;
   if (u.pathname === "/api/patterns") return A.patterns;
   if (u.pathname === "/api/calendar") return A.calendar;
+  if (u.pathname === "/api/cockpit") return A.cockpit;
   if (u.pathname.startsWith("/api/entity/")) {
     const d = A.entity_details[u.pathname.split("/").pop()];
     if (!d) throw new Error(404);
@@ -649,8 +705,9 @@ function renderCalendar() {
   const triggers = calData.filter(m => !m.due_date);
   const overdue = dated.filter(m => daysUntil(m.due_date) < 0);
   const soon = dated.filter(m => { const d = daysUntil(m.due_date); return d >= 0 && d <= 45; })
-                    .sort((a,b) => a.due_date.localeCompare(b.due_date));
+                    .sort((a,b) => ((b.urgency||0) - (a.urgency||0)) || a.due_date.localeCompare(b.due_date));
   const inPlay = soon.reduce((s,m) => s + (m.amount_dkk || 0), 0);
+  const actNow = soon.filter(m => (m.urgency||0) === 3);
 
   // month grid
   const y = calMonth.getFullYear(), mo = calMonth.getMonth();
@@ -670,7 +727,9 @@ function renderCalendar() {
     else { dnum = i - startDow - daysIn + 1; iso = isoOf(new Date(y, mo+1, dnum)); out = true; }
     const evs = (byDay[iso] || []).map(m => {
       const od = daysUntil(m.due_date) < 0 ? " overdue" : "";
-      return `<div class="ev-chip ${esc(m.category||"")}${od}" data-ref="${esc(m.ref||"")}" title="${esc(m.label)}">${esc(m.label)}</div>`;
+      const ug = m.urgency ? " urg-" + m.urgency : "";
+      const bang = (!od && m.urgency >= 2) ? "!".repeat(m.urgency) + " " : "";
+      return `<div class="ev-chip ${esc(m.category||"")}${od}${ug}" data-ref="${esc(m.ref||"")}" title="${esc(m.label)}">${bang}${esc(m.label)}</div>`;
     }).join("");
     cells += `<div class="cell${out?" out":""}${iso===todayIso?" today":""}"><span class="dnum">${dnum}</span>${evs}</div>`;
   }
@@ -680,11 +739,14 @@ function renderCalendar() {
   const mileHtml = m => {
     const d = daysUntil(m.due_date);
     const od = d < 0;
+    const ug = m.urgency || 0;
     const who = (m.contacts||[]).map(c => `<b>${esc(c.name)}</b>${c.reach?" · "+esc(c.reach):""}`).join(", ");
-    return `<div class="mile ${esc(m.category||"")}${od?" overdue":""}">
-      <div class="top"><span class="days">${od?d+"d":"+"+d+"d"}</span>
+    return `<div class="mile ${esc(m.category||"")}${od?" overdue":""}${ug?" urg-"+ug:""}">
+      <div class="top">${ug?`<span class="urg urg-${ug}" title="urgency ${ug} of 3">${"!".repeat(ug)}</span>`:""}
+        <span class="days">${od?d+"d":"+"+d+"d"}</span>
         <span class="lbl">${esc(m.label)}</span>
         ${m.amount_dkk?`<span class="amt">${fmtAmt(m.amount_dkk)}</span>`:""}</div>
+      ${m.owner?"":`<div class="who">unowned — <b>give it an owner</b></div>`}
       ${m.action?`<div class="act">${esc(m.action)}</div>`:""}
       ${who?`<div class="who">${who}</div>`:""}
       ${m.source_url?`<div class="who"><a href="${esc(m.source_url)}" target="_blank" rel="noopener">source</a></div>`:""}
@@ -700,6 +762,7 @@ function renderCalendar() {
         </div>
       </div>
       <div class="sumbar">
+        ${actNow.length?`<span class="warn"><span class="urg urg-3">!!!</span> <b>${actNow.length}</b> need action this week</span>`:""}
         <span><b>${soon.length}</b> due in 45 days</span>
         <span><b>${fmtAmt(inPlay)} DKK</b> in play</span>
         ${overdue.length?`<span class="warn"><b>${overdue.length}</b> overdue — close or reschedule</span>`:""}
@@ -779,10 +842,79 @@ async function loadQuestions() {
   }
 }
 
+async function loadCockpit() {
+  const c = await api("/api/cockpit");
+  const copyBtn = cmd => cmd ? `<div class="ck-cmd"><code>${esc(cmd)}</code><button data-cmd="${esc(cmd)}">copy</button></div>` : "";
+  const actHtml = c.act_now.length ? c.act_now.map(a => `
+    <div class="ck-card u${a.urgency}">
+      <div class="row1">
+        <span class="urg urg-${a.urgency}">${"!".repeat(a.urgency)}</span>
+        <span class="kind">${esc(a.kind)}</span>
+        <span class="lbl">${esc(a.label)}</span>
+        ${a.days !== null && a.days !== undefined ? `<span class="mono">${a.days < 0 ? a.days + "d" : "+" + a.days + "d"}</span>` : ""}
+        ${a.amount_dkk ? `<span class="mono">${fmtAmt(a.amount_dkk)} DKK</span>` : ""}
+        ${a.owner ? `<span class="mono">${esc(a.owner)}</span>` : ""}
+      </div>
+      ${a.detail ? `<div class="det">${esc(a.detail)}</div>` : ""}
+      ${copyBtn(a.cmd)}
+    </div>`).join("") : `<div class="empty">Nothing demands action right now.</div>`;
+
+  const ceil = v => {
+    if (!c.capability_included) return `<span class="mono">local only</span>`;
+    const m = v.ceiling;
+    if (!m) return `<span class="ceil none">none</span>`;
+    if (m === "refuted-only") return `<span class="ceil none">refuted only</span>`;
+    const cls = (m === "demonstrated-once" || m === "hypothesized") ? "mid" : "good";
+    return `<span class="ceil ${cls}">${esc(m)}</span>`;
+  };
+  const matrixHtml = `<table class="ck-table"><tr><th>vector</th><th>entities</th><th>evidence</th>
+    <th>warm+hot</th><th>pipeline DKK</th><th>capability ceiling</th><th>refuted</th></tr>
+    ${c.matrix.map(v => `<tr><td><b>${esc(v.vector)}</b></td><td>${v.entities}</td><td>${v.evidence}</td>
+      <td>${v.warm_hot || 0}</td><td>${v.money_dkk ? fmtAmt(v.money_dkk) : "—"}</td>
+      <td>${ceil(v)}</td><td>${(v.capability && v.capability.refuted) || ""}</td></tr>`).join("")}</table>`;
+
+  const LANES = ["identified", "prepared", "contacted", "in-conversation", "parked"];
+  const playCard = p => `<div class="playcard${p.stalled ? " stalled" : ""}">
+      <div class="nm">${esc(p.name)}</div>
+      <div class="nx">${p.stalled ? "<b>STALLED</b> — " : ""}${esc(p.next_action || "no next action")}${p.next_date ? " by " + esc(p.next_date) : ""} · ${esc(p.owner || "unowned")}</div>
+    </div>`;
+  const lanesHtml = `<div class="ck-lanes">${LANES.map(l => `<div class="ck-lane"><h4>${l} (${c.plays.filter(p => p.state === l).length})</h4>
+      ${c.plays.filter(p => p.state === l).map(playCard).join("")}</div>`).join("")}</div>`;
+
+  const cc = c.claim_ceiling;
+  const ccHtml = cc ? `<div class="ck-health" style="margin-bottom:8px">
+      ${Object.entries(cc.histogram).map(([k, v]) => `<span>${esc(k)}: <b>${v}</b></span>`).join("")}</div>
+    ${cc.refuted.length ? `<div class="det" style="font-size:12px;color:var(--bad)">never claim: ${cc.refuted.map(esc).join(" · ")}</div>` : ""}`
+    : `<div class="empty" style="padding:12px">capability data is local-only (not in the published archive)</div>`;
+
+  const h = c.health;
+  const healthHtml = `<div class="ck-health">
+      <span>valid evidence <b>${h.valid_evidence}</b></span>
+      <span>needs reverify <b>${h.needs_reverify}</b></span>
+      <span>last eval <b>${h.last_eval ? Number(h.last_eval.overall).toFixed(2) : "—"}</b></span>
+      <span>outside-agent reads, 7d <b class="${h.outside_reads_7d ? "" : "zero"}">${h.outside_reads_7d}</b></span>
+      <span>rows staged via MCP <b class="${h.mcp_staged_total ? "" : "zero"}">${h.mcp_staged_total}</b></span>
+    </div>`;
+
+  $("view-cockpit").innerHTML = `
+    <div class="ck-band"><h2>Act now<span class="n">${c.act_now.length}</span></h2>${actHtml}</div>
+    <div class="ck-band"><h2>Sellable-now matrix<span class="n">market heat × capability ceiling</span></h2>${matrixHtml}</div>
+    <div class="ck-band"><h2>Plays<span class="n">${c.plays.length} open</span></h2>${lanesHtml}</div>
+    <div class="ck-band"><h2>Claim ceiling</h2>${ccHtml}</div>
+    <div class="ck-band"><h2>Health</h2>${healthHtml}</div>`;
+  $("view-cockpit").querySelectorAll("[data-cmd]").forEach(b => b.addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText(b.dataset.cmd); b.textContent = "copied"; }
+    catch (e) { const t = document.createElement("textarea"); t.value = b.dataset.cmd;
+      document.body.appendChild(t); t.select(); document.execCommand("copy"); t.remove(); b.textContent = "copied"; }
+    setTimeout(() => { b.textContent = "copy"; }, 1500);
+  }));
+}
+
 document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => {
   document.querySelectorAll(".tab").forEach(x => x.classList.toggle("active", x === t));
   document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + t.dataset.view));
   state.view = t.dataset.view;
+  if (state.view === "cockpit") loadCockpit();
   if (state.view === "evidence") loadEvidence();
   if (state.view === "questions") loadQuestions();
   if (state.view === "prospects") loadProspects();
@@ -803,7 +935,7 @@ $("search").addEventListener("input", e => {
   $(id).addEventListener("change", loadEvidence));
 ["prCountry", "prStatus"].forEach(id => $(id).addEventListener("change", loadProspects));
 
-loadMeta().then(() => { loadEntities(); loadCalendar(); });
+/* boot happens after decrypt (static build) */
 </script>
 </body>
 </html>
