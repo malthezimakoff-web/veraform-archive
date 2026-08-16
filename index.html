@@ -58,6 +58,9 @@
   .searchbar svg { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); opacity: .5; }
   .totals { margin-left: auto; display: flex; gap: 18px; font-size: 12px; color: var(--muted); font-family: var(--mono); }
   .totals b { color: var(--text); font-weight: 600; }
+  .asof { font-family: var(--mono); font-size: 11px; color: var(--dim); white-space: nowrap; }
+  .asof.stale { color: var(--warn); }
+  .asof.very-stale { color: var(--bad); font-weight: 600; }
   .tabs { display: flex; gap: 2px; }
   .tab {
     padding: 6px 14px; border-radius: 5px; font-size: 13px; color: var(--muted); cursor: pointer;
@@ -136,6 +139,39 @@
   .chip { font-family: var(--mono); font-size: 10px; padding: 1px 6px; border-radius: 3px; border: 1px solid var(--line); }
   .chip.invalidated { color: var(--bad); border-color: var(--bad); }
   .chip.stale { color: var(--warn); border-color: var(--warn); }
+  .chip.verified { color: var(--ok); border-color: var(--ok); }
+  .chip.unverified { color: var(--dim); }
+  .chip.guards { color: var(--accent); border-color: var(--accent-dim); }
+  .chip.guards.inc { color: var(--bad); border-color: var(--bad); }
+  /* ACH matrix + decision link drill-down */
+  .achx { overflow-x: auto; margin-top: 8px; }
+  .achx table { border-collapse: collapse; font-size: 12px; min-width: 100%; }
+  .achx th { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .4px;
+    color: var(--dim); text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line);
+    max-width: 140px; }
+  .achx td { padding: 5px 8px; border-bottom: 1px solid var(--line2); vertical-align: baseline; }
+  .achx tr.deadrow { opacity: .45; text-decoration: line-through; }
+  .achx tr[data-entity] { cursor: pointer; }
+  .achx tr[data-entity]:hover td { background: var(--panel2); }
+  .achx .cl { max-width: 480px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .achx .mk { font-family: var(--mono); font-weight: 700; text-align: center; min-width: 34px; }
+  .achx .mkC { color: var(--ok); }
+  .achx .mkI { color: var(--bad); }
+  .achx .mkN { color: var(--dim); }
+  details.drill summary { cursor: pointer; font-family: var(--mono); font-size: 11px;
+    color: var(--accent-dim); list-style: none; margin-top: 7px; }
+  details.drill summary:hover { color: var(--accent); }
+  details.drill summary::before { content: "▸ "; }
+  details.drill[open] summary::before { content: "▾ "; }
+  .dlink { display: flex; gap: 8px; align-items: baseline; font-size: 12px; padding: 4px 0;
+    border-bottom: 1px solid var(--line2); }
+  .dlink:last-child { border-bottom: none; }
+  .dlink .role { font-family: var(--mono); font-size: 10px; color: var(--dim); min-width: 70px; }
+  .dlink .role.linchpin { color: var(--accent); font-weight: 700; }
+  .dlink .lab { flex: 1; min-width: 0; color: var(--muted); }
+  .dlink.dead .lab { text-decoration: line-through; opacity: .6; }
+  .dlink[data-entity] { cursor: pointer; }
+  .dlink[data-entity]:hover .lab { color: var(--text); }
 
   .edgelist { display: flex; flex-direction: column; gap: 6px; }
   .edgerow { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 8px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 5px; cursor: pointer; }
@@ -415,6 +451,7 @@
     <div class="tab" data-view="calendar">Calendar</div>
   </div>
   <div class="totals" id="totals"></div>
+  <div class="asof" id="asof" title="when this data was generated"></div>
 </header>
 
 <main>
@@ -548,6 +585,7 @@ function staticApi(path) {
   if (u.pathname === "/api/calendar") return A.calendar;
   if (u.pathname === "/api/cockpit") return A.cockpit;
   if (u.pathname === "/api/crew") return A.crew;
+  if (u.pathname === "/api/ach") return A.ach;
   if (u.pathname.startsWith("/api/entity/")) {
     const d = A.entity_details[u.pathname.split("/").pop()];
     if (!d) throw new Error(404);
@@ -573,7 +611,7 @@ function staticApi(path) {
       (!stakes || e.stakes === stakes) &&
       (!validOnly || !e.invalid_at) &&
       (!country || e.entity_country === country) &&
-      (!vector || has(e.vectors, vector) || has(e.entity_vectors, vector))).slice(0, 500);
+      (!vector || has(e.vectors, vector) || has(e.entity_vectors, vector)));
   }
   if (u.pathname === "/api/prospects") {
     const country = g("country").toUpperCase(), status = g("status");
@@ -603,6 +641,14 @@ async function loadMeta() {
     `<span><b class="num">${m.totals.entities}</b> entities</span>` +
     `<span><b class="num">${m.totals.evidence}</b> claims</span>` +
     `<span><b class="num">${m.totals.prospects}</b> prospects</span>`;
+  if (m.generated) {
+    const ageDays = (Date.now() - new Date(m.generated).getTime()) / 864e5;
+    const el = $("asof");
+    el.textContent = `data as of ${m.generated.slice(0, 10)}` +
+      (ageDays >= 1.5 ? ` (${Math.round(ageDays)}d old)` : "");
+    el.classList.toggle("stale", ageDays >= 3 && ageDays < 10);
+    el.classList.toggle("very-stale", ageDays >= 10);
+  }
   document.title = `research archive · ${m.domain}`;
   const facet = (elId, items, key, allLabel, total, stateKey) => {
     $(elId).innerHTML = `<div class="fitem active" data-v="">${allLabel}<span class="n">${total}</span></div>` +
@@ -663,11 +709,53 @@ async function loadEntities() {
   }
 }
 
+// The ACH/decision layer, loaded once: powers the cockpit drill-downs and
+// the "what depends on this row" chips on claim cards (the viewer-side
+// counterpart of `db.py fallout`).
+let achPromise = null, achData = null, achByEvidence = {}, achDecByRef = {};
+function loadAch() {
+  if (!achPromise) achPromise = api("/api/ach").then(a => {
+    achData = a || { decisions: [], questions: [] };
+    achByEvidence = {}; achDecByRef = {};
+    (achData.decisions || []).forEach(d => {
+      achDecByRef[d.ref] = d;
+      (d.links || []).forEach(l => {
+        if (l.kind === "evidence") (achByEvidence[l.ref_id] = achByEvidence[l.ref_id] || [])
+          .push({ t: `${d.ref} ${l.role}`, cls: l.role === "linchpin" ? "" : "", full: d.statement });
+      });
+    });
+    (achData.questions || []).forEach(q => (q.rows || []).forEach(r => {
+      Object.entries(r.marks || {}).forEach(([hid, mk]) => {
+        const idx = (q.hypotheses || []).findIndex(h => String(h.id) === hid);
+        (achByEvidence[r.evidence_id] = achByEvidence[r.evidence_id] || [])
+          .push({ t: `Q${q.num}·H${idx + 1}:${mk}`, cls: mk === "I" ? "inc" : "",
+                  full: (q.hypotheses[idx] || {}).statement });
+      });
+    }));
+  }).catch(() => {
+    // Retry on next call (e.g. the static build before decrypt unlocks).
+    achPromise = null;
+    achData = { decisions: [], questions: [] };
+  });
+  return achPromise;
+}
+
 function citationHtml(e, showEntity) {
   const chips = [];
   if (e.stakes === "high") chips.push(`<span class="chip">high-stakes</span>`);
   if (e.invalid_at) chips.push(`<span class="chip invalidated">invalidated</span>`);
   if (e.needs_reverify) chips.push(`<span class="chip stale">needs re-verify</span>`);
+  // Verification depth: how many distinct verifiers passed this row. The
+  // votes are the system's strongest guarantee; hiding them made a 3-vote
+  // unanimous high-stakes row indistinguishable from a bare note.
+  if (e.votes_n !== undefined && !e.invalid_at) {
+    chips.push(e.votes_n > 0
+      ? `<span class="chip verified" title="passed by ${esc((e.voters || []).join(", ")) || "verifier"}${e.verified_by ? "; promoted by " + esc(e.verified_by) : ""}">✓ ${e.votes_n} verifier${e.votes_n === 1 ? "" : "s"}</span>`
+      : `<span class="chip unverified" title="no recorded verifier votes">unvoted</span>`);
+  }
+  // What rests on this row: decision links and hypothesis marks.
+  (achByEvidence[e.id] || []).slice(0, 4).forEach(g =>
+    chips.push(`<span class="chip guards ${g.cls}" title="${esc(g.full || "")}">→ ${esc(g.t)}</span>`));
   const val = (e.value_num != null) ? ` <span class="val">${e.value_num}${e.unit ? " " + esc(e.unit) : ""}</span>` : "";
   return `<div class="citation${e.invalid_at ? " invalid" : ""}${e.stakes === "high" ? " high" : ""}">
     ${showEntity ? `<div class="src-entity">${esc(e.entity_name || "—")}</div>` : ""}
@@ -683,6 +771,7 @@ function citationHtml(e, showEntity) {
 
 async function selectEntity(id) {
   state.selectedEntity = id;
+  await loadAch();  // dependency chips on the claim cards
   $("entityList").querySelectorAll(".erow").forEach(el => el.classList.toggle("active", parseInt(el.dataset.id) === id));
   const d = await api("/api/entity/" + id);
   $("detailEmpty").style.display = "none";
@@ -742,14 +831,34 @@ async function selectEntity(id) {
   det.querySelectorAll(".edgerow").forEach(el => el.addEventListener("click", () => selectEntity(parseInt(el.dataset.id))));
 }
 
+// Claims render in pages so the full ledger stays browsable without a
+// thousand-card DOM. The old export capped the data itself at 500 rows,
+// which silently hid the oldest valid claims and all invalidated ones.
+const EV_PAGE = 200;
+let evAll = [], evShown = 0;
+function renderEvidencePage() {
+  const next = evAll.slice(evShown, evShown + EV_PAGE);
+  evShown += next.length;
+  const html = next.map(e => citationHtml(e, true)).join("");
+  const more = $("evMoreBtn");
+  if (more) more.remove();
+  $("evList").insertAdjacentHTML("beforeend", html +
+    (evShown < evAll.length
+      ? `<span class="showmore" id="evMoreBtn">show ${Math.min(EV_PAGE, evAll.length - evShown)} more of ${evAll.length - evShown} remaining ▾</span>`
+      : (evAll.length > EV_PAGE ? `<div class="empty" style="padding:14px">all ${evAll.length} claims shown</div>` : "")));
+  const btn = $("evMoreBtn");
+  if (btn) btn.addEventListener("click", renderEvidencePage);
+}
 async function loadEvidence() {
   const q = new URLSearchParams({
     search: state.search, golden_ref: $("evQuestion").value, stakes: $("evStakes").value,
     valid_only: $("evValidOnly").checked ? "1" : "0",
     country: $("evCountry").value, vector: $("evVector").value });
-  const list = await api("/api/evidence?" + q);
-  $("evList").innerHTML = list.length ? list.map(e => citationHtml(e, true)).join("")
-    : `<div class="empty">No claims match.</div>`;
+  evAll = await api("/api/evidence?" + q);
+  await loadAch();  // dependency chips on the claim cards
+  evShown = 0;
+  $("evList").innerHTML = evAll.length ? "" : `<div class="empty">No claims match.</div>`;
+  if (evAll.length) renderEvidencePage();
 }
 
 // Vector-targeted angle text: prefer explicit [vector] section markers (the
@@ -1107,6 +1216,13 @@ async function loadQuestions() {
 
 async function loadCockpit() {
   const c = await api("/api/cockpit");
+  await loadAch();
+  // Day counts are recomputed at read time (like the Calendar does): the
+  // exported values are frozen at export time and silently drift in a
+  // stale bundle -- a wrong countdown misinforms with confidence.
+  [...(c.act_now || []), ...(c.cleanup || [])].forEach(a => {
+    if (a.due_date) a.days = daysUntil(a.due_date.slice(0, 10));
+  });
   const copyBtn = cmd => cmd ? `<div class="ck-cmd"><code>${esc(cmd)}</code><button data-cmd="${esc(cmd)}">copy</button></div>` : "";
   // Group repetitive kinds into one card with table rows: nine overdue
   // funding cards were 1,700px of the same shape; a grouped table is ~300.
@@ -1195,11 +1311,25 @@ async function loadCockpit() {
     : `<div class="empty" style="padding:12px">capability data is local-only (not in the published archive)</div>`;
 
   const h = c.health;
+  // Trendlines from the weekly health snapshots: a number you manage needs
+  // a direction, not just a value.
+  const hist = c.health_history || [];
+  const spark = key => {
+    const vals = hist.map(s => s.metrics[key]).filter(v => v !== null && v !== undefined);
+    if (vals.length < 2) return "";
+    const lo = Math.min(...vals), hi = Math.max(...vals);
+    const glyphs = "▁▂▃▄▅▆▇";
+    return `<span class="num" style="color:var(--dim);letter-spacing:1px" title="last ${vals.length} weekly snapshots: ${vals.join(", ")}">${
+      vals.map(v => glyphs[hi === lo ? 3 : Math.round((v - lo) / (hi - lo) * 6)]).join("")}</span>`;
+  };
+  const citedPct = h.reads_7d ? Math.round(100 * h.cited_reads_7d / h.reads_7d) : 0;
   const healthHtml = `<div class="ck-health">
       <span>valid evidence <b>${h.valid_evidence}</b></span>
       <span>needs reverify <b>${h.needs_reverify}</b></span>
-      <span>last eval <b>${h.last_eval ? Number(h.last_eval.overall).toFixed(2) : "—"}</b></span>
-      <span>outside-agent reads, 7d <b class="${h.outside_reads_7d ? "" : "zero"}">${h.outside_reads_7d}</b></span>
+      <span>eval <b>${h.eval_overall != null ? Number(h.eval_overall).toFixed(2) : "—"}</b> ${spark("eval_overall")}</span>
+      <span>outside reads, 7d <b class="${h.outside_reads_7d ? "" : "zero"}">${h.outside_reads_7d}</b> ${spark("outside_reads_7d")}</span>
+      <span>cited reads, 7d <b class="${h.cited_reads_7d ? "" : "zero"}">${h.cited_reads_7d}</b> (${citedPct}%) ${spark("cited_reads_7d")}</span>
+      <span>stalled plays <b class="${h.stalled_plays ? "zero" : ""}">${h.stalled_plays ?? "—"}</b>/${h.open_plays ?? "—"} ${spark("stalled_plays")}</span>
       <span>rows staged via MCP <b class="${h.mcp_staged_total ? "" : "zero"}">${h.mcp_staged_total}</b></span>
     </div>`;
 
@@ -1226,20 +1356,40 @@ async function loadCockpit() {
     <div class="ck-band"><h2>Sellable-now matrix<span class="n">market heat × capability ceiling</span></h2>${matrixHtml}</div>
     <div class="ck-band"><h2>Plays<span class="n">${c.plays.length} open</span></h2>${lanesHtml}</div>
     ${(c.decisions && c.decisions.length) ? `<div class="ck-band"><h2>Decisions<span class="n">the register — green means decided and guarded</span></h2>
-      <div class="decgrid">${c.decisions.map(d => `
+      <div class="decgrid">${c.decisions.map(d => {
+        const ach = achDecByRef[d.ref];
+        const links = (ach && ach.links) || [];
+        return `
         <div class="deccard ${esc(d.status)}">
           <div class="drow"><span class="dref">${esc(d.ref)}</span><span class="dst">${esc(d.status)}</span>
             <span class="dstmt">${esc(d.statement)}</span>
             <span class="dguard">${d.linchpins ? `<b>${d.linchpins}</b> linchpin${d.linchpins === 1 ? "" : "s"} · ` : ""}${d.evidence_links || 0} ev${d.owner ? ` · ${esc(d.owner)}` : ""}${d.decided_at ? ` · ${esc(d.decided_at.slice(0, 10))}` : ""}</span></div>
           ${d.status === "suspect" ? `<div class="dnote">!! ${esc(d.suspect_reason || "")}</div>` : (d.review_note ? `<div class="dnote">${esc(d.review_note)}</div>` : (!d.evidence_links ? `<div class="dnote">unlinked — no evidence guards this decision yet</div>` : ""))}
-        </div>`).join("")}</div>
+          ${links.length ? `<details class="drill"><summary>what guards ${esc(d.ref)} (${links.length})</summary>
+            ${links.map(l => `<div class="dlink${l.invalid ? " dead" : ""}"${l.entity_id ? ` data-entity="${l.entity_id}"` : ""}>
+              <span class="role${l.role === "linchpin" ? " linchpin" : ""}">${esc(l.role)}</span>
+              <span class="lab" title="${esc(l.label || "")}">${esc(l.kind)} #${l.ref_id} · ${esc((l.label || "").slice(0, 110))}</span>
+            </div>`).join("")}</details>` : ""}
+        </div>`; }).join("")}</div>
       ${(c.hypotheses && c.hypotheses.length) ? `<h2 style="margin-top:18px">Live hypotheses<span class="n">ranked by inconsistencies — fewest survive</span></h2>
       <div class="ck-card">${c.hypotheses.map((h, i, arr) => `
         <div class="hyprow${h.status === "eliminated" ? " eliminated" : ""}${(i === 0 || arr[i-1].question_num !== h.question_num) && h.status !== "eliminated" ? " leader" : ""}">
           <span class="hq">Q${h.question_num || "?"}</span>
           <span class="hscore"><span class="hi">I=${h.i || 0}</span> <span class="hc">C=${h.c || 0}</span> N=${h.n || 0}</span>
           <span class="hstmt">${esc(h.statement)}</span>
-        </div>`).join("")}</div>` : ""}
+        </div>`).join("")}
+        ${((achData && achData.questions) || []).map(q => `
+        <details class="drill"><summary>ACH matrix Q${q.num} — ${q.rows.length} row${q.rows.length === 1 ? "" : "s"} × ${q.hypotheses.length} hypotheses</summary>
+          <div class="achx"><table>
+            <tr><th style="min-width:280px">evidence</th>${q.hypotheses.map((h, i) =>
+              `<th title="${esc(h.statement)}">H${i + 1}${h.status === "eliminated" ? " ✕" : ""}</th>`).join("")}</tr>
+            ${q.rows.map(r => `<tr${r.invalid ? ` class="deadrow"` : ""}${r.entity_id ? ` data-entity="${r.entity_id}"` : ""} title="${esc(r.claim)}">
+              <td class="cl">#${r.evidence_id} ${esc(r.claim)}</td>
+              ${q.hypotheses.map(h => { const mk = r.marks[String(h.id)];
+                return `<td class="mk ${mk ? "mk" + mk : ""}">${mk || "·"}</td>`; }).join("")}
+            </tr>`).join("")}
+          </table></div>
+        </details>`).join("")}` : ""}
     </div>` : ""}
     <div class="ck-band"><h2>The crew<span class="n">who worked, what they left, what waits</span></h2>${crewHtml}</div>
     ${(c.cleanup && c.cleanup.length) ? `<div class="ck-band"><h2>Cleanup<span class="n">deadlines that passed unclosed — close or roll them, no drama</span></h2>
@@ -1258,6 +1408,9 @@ async function loadCockpit() {
   });
   $("view-cockpit").querySelectorAll("tr[data-mvec]").forEach(tr =>
     tr.addEventListener("click", () => openPipelineVector(tr.dataset.mvec)));
+  // ACH matrix rows and decision links jump to the entity behind the claim.
+  $("view-cockpit").querySelectorAll(".achx tr[data-entity], .dlink[data-entity]").forEach(el =>
+    el.addEventListener("click", () => goToEntity(parseInt(el.dataset.entity))));
   $("view-cockpit").querySelectorAll("[data-cmd]").forEach(b => b.addEventListener("click", async () => {
     try { await navigator.clipboard.writeText(b.dataset.cmd); b.textContent = "copied"; }
     catch (e) { const t = document.createElement("textarea"); t.value = b.dataset.cmd;
