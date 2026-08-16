@@ -812,9 +812,28 @@ async function loadProspects() {
     }));
     return;
   }
+  // The vertical dossier header: the sim_domain entity's position prose,
+  // so drilling into flood answers "what IS the flood idea" before any
+  // prospect card. Falls back silently if none exists for the vector.
+  let dossierHtml = "";
+  try {
+    const doms = await api("/api/entities?" + new URLSearchParams({type: "sim_domain", vector: pipeState.vector, search: "", status: "", country: ""}));
+    const d = doms && doms[0];
+    if (d && d.summary) {
+      const m = matrix.find(x => x.vector === pipeState.vector) || {};
+      const parts = d.summary.split(/Veraform position/);
+      dossierHtml = `<div class="ck-card" style="border-left:3px solid var(--accent);margin-bottom:12px">
+        <div class="row1"><span class="lbl" style="font-family:var(--serif);font-size:15px">${esc(d.name)}</span>
+          ${m.ceiling ? `<span class="ceil ${(m.ceiling === "demonstrated-once" || m.ceiling === "hypothesized") ? "mid" : "good"}">${esc(m.ceiling)}</span>` : ""}
+          <span class="mono" style="cursor:pointer;color:var(--accent-dim)" data-dossier="${d.id}">full dossier →</span></div>
+        <div class="det" style="margin-top:6px">${esc(parts[0])}</div>
+        ${parts[1] ? `<div class="det" style="margin-top:6px;color:var(--text)"><b>Veraform position</b>${esc(parts[1])}</div>` : ""}
+      </div>`;
+    }
+  } catch (e) {}
   const filtered = list.filter(p => (p.vectors || []).includes(pipeState.vector) &&
     (!pipeState.lane || (p.params || []).includes(pipeState.lane)));
-  $("prList").innerHTML = crumb + (filtered.length ? filtered.map(p => `
+  $("prList").innerHTML = crumb + dossierHtml + (filtered.length ? filtered.map(p => `
     <div class="prcard ${esc(p.status)}${p.needs_rescore ? " rescore" : ""}" data-id="${p.entity_id}">
       <div class="prhead">
         <span class="nm">${esc(p.name)}</span>
@@ -845,6 +864,12 @@ async function loadProspects() {
   if (back) back.addEventListener("click", () => { pipeState.vector = ""; pipeState.lane = ""; loadProspects(); });
   const lc = $("laneClear");
   if (lc) lc.addEventListener("click", () => { pipeState.lane = ""; loadProspects(); });
+  const dl = $("prList").querySelector("[data-dossier]");
+  if (dl) dl.addEventListener("click", () => {
+    document.querySelector('.tab[data-view="entities"]').click();
+    setLibMode("entities");
+    selectEntity(parseInt(dl.dataset.dossier));
+  });
   $("prList").querySelectorAll(".prcard[data-id]").forEach(el => el.addEventListener("click", () => {
     document.querySelector('.tab[data-view="entities"]').click();
     setLibMode("entities");
