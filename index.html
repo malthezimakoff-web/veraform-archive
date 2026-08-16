@@ -211,6 +211,26 @@
   .ck-health { display: flex; gap: 18px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
   .ck-health b { font-family: var(--mono); color: var(--text); }
   .ck-health .zero { color: var(--bad); }
+  /* the crew: the engine's roles, visible */
+  .crewgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+  .crewcard { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 11px 13px; }
+  .crewcard .chead { display: flex; gap: 9px; align-items: center; }
+  .crewcard .glyph { font-size: 20px; line-height: 1; filter: grayscale(0.25); }
+  .crewcard .cname { font-family: var(--serif); font-weight: 650; font-size: 13.5px; flex: 1; }
+  .crewdot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .crewdot.working { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+  .crewdot.today { background: var(--accent); }
+  .crewdot.idle { background: var(--dim); }
+  .crewdot.never { background: none; border: 1px solid var(--dim); }
+  .crewcard .cduty { font-size: 11px; color: var(--dim); margin-top: 2px; }
+  .crewcard .cq { font-family: var(--mono); font-size: 10.5px; margin-top: 7px; }
+  .crewcard .cq b { color: var(--accent); }
+  .crewcard .cq.hot b { color: var(--bad); }
+  .crewcard .cnote { font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.45;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .crewcard .cbrief { font-family: var(--mono); font-size: 10px; color: var(--accent-dim); margin-top: 5px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .crewcard .cago { font-family: var(--mono); font-size: 10px; color: var(--dim); }
   /* grouped act-now: one card per kind, table rows inside */
   .ck-group table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 6px; }
   .ck-group td { padding: 4px 8px 4px 0; border-bottom: 1px solid var(--line); vertical-align: baseline; }
@@ -290,6 +310,8 @@
   .mile .top { display: flex; gap: 8px; align-items: baseline; }
   .mile .days { font-family: var(--mono); font-size: 11px; color: var(--accent); white-space: nowrap; }
   .mile.overdue .days { color: var(--bad); }
+  .mile.flash { box-shadow: 0 0 0 2px var(--accent); transition: box-shadow .3s; }
+  .ev-chip[data-ref] { cursor: pointer; }
   .mile .lbl { font-size: 12.5px; font-weight: 600; flex: 1; min-width: 0; }
   .mile .amt { font-family: var(--mono); font-size: 11px; color: var(--muted); }
   .mile .act { font-size: 11.5px; color: var(--muted); margin-top: 5px; line-height: 1.4; }
@@ -499,6 +521,7 @@ function staticApi(path) {
   if (u.pathname === "/api/patterns") return A.patterns;
   if (u.pathname === "/api/calendar") return A.calendar;
   if (u.pathname === "/api/cockpit") return A.cockpit;
+  if (u.pathname === "/api/crew") return A.crew;
   if (u.pathname.startsWith("/api/entity/")) {
     const d = A.entity_details[u.pathname.split("/").pop()];
     if (!d) throw new Error(404);
@@ -800,7 +823,7 @@ function renderCalendar() {
     const od = d < 0;
     const ug = m.urgency || 0;
     const who = (m.contacts||[]).map(c => `<b>${esc(c.name)}</b>${c.reach?" · "+esc(c.reach):""}`).join(", ");
-    return `<div class="mile ${esc(m.category||"")}${od?" overdue":""}${ug?" urg-"+ug:""}">
+    return `<div class="mile ${esc(m.category||"")}${od?" overdue":""}${ug?" urg-"+ug:""}" data-ref="${esc(m.ref||"")}"${m.entity_id?` data-entity="${m.entity_id}" style="cursor:pointer" title="open ${esc(m.entity_name||"the linked organization")}"`:""}>
       <div class="top">${ug?`<span class="urg urg-${ug}" title="urgency ${ug} of 3">${"!".repeat(ug)}</span>`:""}
         <span class="days">${od?d+"d":"+"+d+"d"}</span>
         <span class="lbl">${esc(m.label)}</span>
@@ -844,6 +867,30 @@ function renderCalendar() {
     else calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() + n, 1);
     renderCalendar();
   }));
+  // Grid chip -> its rail card (scroll + flash); rail card -> the linked
+  // organization's dossier when one exists.
+  $("view-calendar").querySelectorAll(".ev-chip[data-ref]").forEach(ch => ch.addEventListener("click", () => {
+    const card = $("view-calendar").querySelector(`.mile[data-ref="${CSS.escape(ch.dataset.ref)}"]`);
+    if (card) {
+      card.scrollIntoView({behavior: "smooth", block: "center"});
+      card.classList.add("flash");
+      setTimeout(() => card.classList.remove("flash"), 1600);
+    } else {
+      const m = calData.find(x => x.ref === ch.dataset.ref);
+      if (m && m.entity_id) goToEntity(m.entity_id);
+    }
+  }));
+  $("view-calendar").querySelectorAll(".mile[data-entity]").forEach(el =>
+    el.addEventListener("click", e => {
+      if (e.target.closest("a")) return;
+      goToEntity(parseInt(el.dataset.entity));
+    }));
+}
+
+function goToEntity(id) {
+  document.querySelector('.tab[data-view="entities"]').click();
+  setLibMode("entities");
+  selectEntity(id);
 }
 function isoOf(d) {
   return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
@@ -953,11 +1000,16 @@ async function loadCockpit() {
     const cls = (m === "demonstrated-once" || m === "hypothesized") ? "mid" : "good";
     return `<span class="ceil ${cls}">${esc(m)}</span>`;
   };
+  const regimeRows = v => (v.regimes || []).map(r => `<tr>
+      <td style="padding-left:22px;color:var(--muted)">↳ ${esc(r.slug.replace(v.vector + "-", ""))}</td>
+      <td>${r.entities}</td><td>${r.evidence}</td><td></td><td></td>
+      <td>${!c.capability_included ? `<span class="mono">local only</span>` : (r.ceiling ? `<span class="ceil ${(r.ceiling === "demonstrated-once" || r.ceiling === "hypothesized") ? "mid" : "good"}">${esc(r.ceiling)}</span>` : `<span class="ceil none">none</span>`)}</td><td></td>
+    </tr>`).join("") + (v.untagged ? `<tr><td style="padding-left:22px;color:var(--dim)" colspan="7">↳ ${v.untagged} ${esc(v.vector)} rows untagged by regime — the retag backlog</td></tr>` : "");
   const matrixHtml = `<table class="ck-table"><tr><th>vector</th><th>entities</th><th>evidence</th>
     <th>warm+hot</th><th>pipeline DKK</th><th>capability ceiling</th><th>refuted</th></tr>
     ${c.matrix.map(v => `<tr><td><b>${esc(v.vector)}</b></td><td>${v.entities}</td><td>${v.evidence}</td>
       <td>${v.warm_hot || 0}</td><td>${v.money_dkk ? fmtAmt(v.money_dkk) : "—"}</td>
-      <td>${ceil(v)}</td><td>${(v.capability && v.capability.refuted) || ""}</td></tr>`).join("")}</table>`;
+      <td>${ceil(v)}</td><td>${(v.capability && v.capability.refuted) || ""}</td></tr>${regimeRows(v)}`).join("")}</table>`;
 
   // Plays: a summary strip plus exceptions only. Twenty identical stalled
   // cards taught nothing; the strip says the state, the cards show what
@@ -996,10 +1048,36 @@ async function loadCockpit() {
       <span>rows staged via MCP <b class="${h.mcp_staged_total ? "" : "zero"}">${h.mcp_staged_total}</b></span>
     </div>`;
 
+  const crew = await api("/api/crew");
+  const ago = ts => {
+    if (!ts) return "never ran";
+    const d = (Date.now() - new Date(ts).getTime()) / 36e5;
+    return d < 1 ? Math.round(d * 60) + "m ago" : d < 48 ? Math.round(d) + "h ago" : Math.round(d / 24) + "d ago";
+  };
+  const crewHtml = `<div class="crewgrid">${crew.map(r => `
+    <div class="crewcard">
+      <div class="chead"><span class="glyph">${r.glyph}</span>
+        <span class="cname">${esc(r.label)}</span>
+        <span class="cago">${ago(r.last_ts)}</span>
+        <span class="crewdot ${esc(r.status)}" title="${esc(r.status)}"></span></div>
+      <div class="cduty">${esc(r.duty)} · ${r.actions_total} action${r.actions_total === 1 ? "" : "s"} logged</div>
+      ${r.queue ? `<div class="cq${r.queue > 50 ? " hot" : ""}">queue: <b>${r.queue}</b> waiting</div>` : ""}
+      ${r.last_note ? `<div class="cnote">${esc(r.last_note)}</div>` : ""}
+      ${r.brief ? `<div class="cbrief" title="${esc(r.brief.line)}">${esc(r.brief.file)}</div>` : ""}
+    </div>`).join("")}</div>`;
+
   $("view-cockpit").innerHTML = `
     <div class="ck-band"><h2>Act now<span class="n">${c.act_now.length}</span></h2>${actHtml}</div>
     <div class="ck-band"><h2>Sellable-now matrix<span class="n">market heat × capability ceiling</span></h2>${matrixHtml}</div>
     <div class="ck-band"><h2>Plays<span class="n">${c.plays.length} open</span></h2>${lanesHtml}</div>
+    <div class="ck-band"><h2>The crew<span class="n">who worked, what they left, what waits</span></h2>${crewHtml}</div>
+    ${(c.cleanup && c.cleanup.length) ? `<div class="ck-band"><h2>Cleanup<span class="n">deadlines that passed unclosed — close or roll them, no drama</span></h2>
+      <details><summary class="showmore">${c.cleanup.length} unclosed past-due item(s) · ${fmtAmt(c.cleanup.reduce((s, a) => s + (a.amount_dkk || 0), 0))} DKK ▾</summary>
+      <div class="ck-card ck-group"><table>${c.cleanup.map(a => `<tr title="${esc(a.detail || "")}">
+        <td class="mono">${a.days}d</td><td>${esc(a.label)}</td>
+        <td class="mono">${a.amount_dkk ? fmtAmt(a.amount_dkk) : ""}</td>
+        <td><button class="minicopy" data-cmd="${esc(a.cmd)}">copy</button></td>
+      </tr>`).join("")}</table></div></details></div>` : ""}
     <div class="ck-band"><h2>Claim ceiling</h2>${ccHtml}</div>
     <div class="ck-band"><h2>Health</h2>${healthHtml}</div>
     <div class="ck-band"><h2>Patterns</h2>
