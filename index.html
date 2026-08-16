@@ -752,6 +752,31 @@ async function loadEvidence() {
     : `<div class="empty">No claims match.</div>`;
 }
 
+// Vector-targeted angle text: prefer explicit [vector] section markers (the
+// prospector's convention going forward); otherwise surface the sentences
+// mentioning the vector (Danish cognates included) and fold the rest.
+const VEC_TERMS = {
+  "noise": ["noise", "støj", "stoej", "acoust", "akust", "nord2000", "cnossos", "db"],
+  "flood": ["flood", "oversvøm", "oversvom", "klimatilpas", "freeboard", "vand", "water", "elevation"],
+  "solar": ["solar", "solcelle", "sol ", "roof", "tag", "pv", "yield"],
+  "wind": ["wind", "vind", "curtail", "turbine"],
+  "radio": ["radio", "5g", "coverage", "rf", "propagation"],
+  "3d-recon": ["3d", "geometry", "geometri", "splat", "reconstruc", "model", "twin", "mesh"],
+  "synthetic-data": ["synthetic", "training data", "change pair"],
+  "shadow": ["shadow", "skygge", "daylight", "dagslys"],
+};
+function targetedAngle(angle, vector) {
+  if (!angle) return {hit: "", rest: ""};
+  const marker = new RegExp("\\[" + vector + "\\]\\s*([^\\[]+)", "i");
+  const m = angle.match(marker);
+  if (m) return {hit: m[1].trim(), rest: angle.replace(m[0], "").trim()};
+  const terms = VEC_TERMS[vector] || [vector];
+  const sents = angle.split(/(?<=[.!?])\s+/);
+  const hits = sents.filter(s => terms.some(t => s.toLowerCase().includes(t)));
+  if (!hits.length || hits.length === sents.length) return {hit: angle, rest: ""};
+  return {hit: hits.join(" "), rest: sents.filter(s => !hits.includes(s)).join(" ")};
+}
+
 // The pipeline's parent layer: pipeState.vector = "" shows the vertical
 // overview (aggregate strip per vector, ranked); picking one drills into
 // its filtered cards. Noise carries its two lanes (engine-locked vs
@@ -841,13 +866,20 @@ async function loadProspects() {
         ${(p.vectors || []).map(v => `<span class="vchip">${esc(v)}</span>`).join("")}
         <span class="st ${esc(p.status)}">${esc(p.status)}</span>
         ${p.needs_rescore ? '<span class="st">needs rescore</span>' : ""}
-        ${p.money_dkk ? `<span class="money">${fmtDkk(p.money_dkk)}</span>` : ""}
+        ${(() => { if (!p.scored_at) return ""; const d = Math.round((Date.now() - new Date(p.scored_at).getTime()) / 864e5);
+           return d >= 3 ? `<span class="cc" title="ranking reflects the world as of this date">scored ${d}d ago</span>` : ""; })()}
+        ${p.money_dkk ? ((p.vectors || []).length > 1
+          ? `<span class="money" style="opacity:.6" title="scored for the whole account, not this vertical alone">${fmtDkk(p.money_dkk)} <span class="cc">account · ${p.vectors.length} verticals</span></span>`
+          : `<span class="money">${fmtDkk(p.money_dkk)}</span>`) : ""}
       </div>
       <div class="meters">
         <div class="meter">interest <span class="bar"><i style="width:${Math.round(100 * (p.interest || 0))}%"></i></span><span class="v">${(p.interest || 0).toFixed(2)}</span></div>
         <div class="meter">money <span class="bar"><i style="width:${Math.round(100 * (p.money || 0))}%"></i></span><span class="v">${(p.money || 0).toFixed(2)}</span></div>
       </div>
-      ${p.angle ? `<div class="angle"><b>Angle:</b> ${esc(p.angle)}</div>` : ""}
+      ${p.angle ? (() => { const t = targetedAngle(p.angle, pipeState.vector);
+        return `<div class="angle"><b>${esc(pipeState.vector)} angle:</b> ${esc(t.hit)}</div>` +
+          (t.rest ? `<details class="qd"><summary style="font-size:11px;color:var(--dim);cursor:pointer;font-family:var(--mono)">rest of the account angle ▸</summary><div class="angle" style="color:var(--dim)">${esc(t.rest)}</div></details>` : "");
+      })() : ""}
       ${p.timing ? `<div class="timing">${esc(p.timing)}</div>` : ""}
       ${p.play ? `<div class="playstrip${p.play.stalled ? " stalled" : ""}">
         <span class="pstate">play: ${esc(p.play.state)}</span>
