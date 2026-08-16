@@ -32,7 +32,7 @@
   * { box-sizing: border-box; margin: 0; }
   html, body { height: 100%; }
   body {
-    background: var(--bg); color: var(--text); font: 14px/1.5 var(--sans);
+    background: var(--bg); color: var(--text); font: 15px/1.5 var(--sans);
     display: flex; flex-direction: column;
   }
   .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
@@ -211,6 +211,50 @@
   .ck-health { display: flex; gap: 18px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
   .ck-health b { font-family: var(--mono); color: var(--text); }
   .ck-health .zero { color: var(--bad); }
+  /* grouped act-now: one card per kind, table rows inside */
+  .ck-group table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 6px; }
+  .ck-group td { padding: 4px 8px 4px 0; border-bottom: 1px solid var(--line); vertical-align: baseline; }
+  .ck-group tr:last-child td { border-bottom: none; }
+  .ck-group td.mono { font-family: var(--mono); font-size: 11px; white-space: nowrap; color: var(--muted); }
+  .ck-group .minicopy { font-family: var(--mono); font-size: 10px; background: var(--panel2);
+    border: 1px solid var(--line); border-radius: 3px; color: var(--muted); padding: 2px 7px; cursor: pointer; }
+  .ck-group .minicopy:hover { color: var(--accent); border-color: var(--accent-dim); }
+  .ck-strip { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted);
+    background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px 14px; margin-bottom: 10px; }
+  .ck-strip b { font-family: var(--mono); color: var(--text); }
+  /* play strip on prospect cards and dossiers */
+  .playstrip { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; margin-top: 8px;
+    padding: 7px 10px; background: var(--panel2); border: 1px solid var(--line); border-radius: 5px; font-size: 12px; }
+  .playstrip .pstate { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase;
+    letter-spacing: .5px; color: var(--accent); border: 1px solid var(--accent-dim); border-radius: 3px; padding: 1px 7px; }
+  .playstrip.stalled .pstate { color: var(--bad); border-color: var(--bad); }
+  .playstrip .pnext { color: var(--muted); flex: 1; min-width: 160px; }
+  .playstrip .powner { font-family: var(--mono); font-size: 11px; color: var(--dim); }
+  .dlchip { font-family: var(--mono); font-size: 10.5px; color: var(--warn, var(--accent));
+    border: 1px solid var(--line); border-radius: 3px; padding: 1px 7px; white-space: nowrap; }
+  /* quote disclosure */
+  .citation details.qd summary { cursor: pointer; font-size: 11px; color: var(--dim);
+    font-family: var(--mono); list-style: none; margin-top: 3px; }
+  .citation details.qd summary::before { content: "▸ quote"; }
+  .citation details.qd[open] summary::before { content: "▾ quote"; }
+  .citation details.qd .quote { margin-top: 4px; }
+  /* collapsed long sections */
+  .showmore { font-family: var(--mono); font-size: 11px; color: var(--accent-dim); cursor: pointer;
+    padding: 6px 0; display: inline-block; }
+  .showmore:hover { color: var(--accent); }
+  /* library mode switch */
+  .modeswitch { display: flex; gap: 2px; background: var(--panel2); border: 1px solid var(--line);
+    border-radius: 5px; padding: 2px; margin-bottom: 12px; }
+  .modeswitch div { flex: 1; text-align: center; font-family: var(--mono); font-size: 11px;
+    padding: 4px 8px; border-radius: 4px; cursor: pointer; color: var(--muted); }
+  .modeswitch div.active { background: var(--panel); color: var(--accent); }
+  /* responsive: never lose the navigation */
+  .tabs { overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  @media (max-width: 700px) {
+    header { flex-wrap: wrap; }
+    .searchbar { order: 3; width: 100%; }
+  }
   /* ---- calendar ---- */
   #view-calendar.active { display: flex; }
   #view-calendar { gap: 0; min-height: 0; }
@@ -317,12 +361,10 @@
   </div>
   <div class="tabs">
     <div class="tab active" data-view="cockpit">Cockpit</div>
-    <div class="tab" data-view="calendar">Calendar</div>
-    <div class="tab" data-view="entities">Entities</div>
-    <div class="tab" data-view="prospects">Prospects</div>
-    <div class="tab" data-view="evidence">Evidence</div>
+    <div class="tab" data-view="prospects">Pipeline</div>
+    <div class="tab" data-view="entities">Library</div>
     <div class="tab" data-view="questions">Questions</div>
-    <div class="tab" data-view="patterns">Patterns</div>
+    <div class="tab" data-view="calendar">Calendar</div>
   </div>
   <div class="totals" id="totals"></div>
 </header>
@@ -330,6 +372,7 @@
 <main>
   <div class="view" id="view-entities">
     <div class="facets">
+      <div class="modeswitch"><div class="active" data-mode="entities">Organizations</div><div data-mode="evidence">Claims</div></div>
       <h3>Type</h3>
       <div class="flist" id="typeFacets"></div>
       <h3>Country</h3>
@@ -367,6 +410,7 @@
   <div class="view" id="view-evidence">
     <div style="flex:1; display:flex; flex-direction:column; min-width:0;">
       <div class="ev-toolbar">
+        <span class="modeswitch" style="margin:0 10px 0 0; min-width:200px"><div data-mode="entities">Organizations</div><div class="active" data-mode="evidence">Claims</div></span>
         <label>Question <select id="evQuestion"><option value="">any</option></select></label>
         <label>Country <select id="evCountry"><option value="">any</option></select></label>
         <label>Vector <select id="evVector"><option value="">any</option></select></label>
@@ -552,7 +596,6 @@ function entityRowHtml(e) {
       ${e.edge_n ? `<span>· ${e.edge_n} link${e.edge_n === 1 ? "" : "s"}</span>` : ""}
       ${vecs}
     </div>
-    ${e.summary ? `<div class="sum">${esc(e.summary)}</div>` : ""}
   </div>`;
 }
 
@@ -580,7 +623,7 @@ function citationHtml(e, showEntity) {
   return `<div class="citation${e.invalid_at ? " invalid" : ""}${e.stakes === "high" ? " high" : ""}">
     ${showEntity ? `<div class="src-entity">${esc(e.entity_name || "—")}</div>` : ""}
     <div class="claim">${esc(e.claim)}${val}</div>
-    ${e.quote ? `<div class="quote">"${esc(e.quote)}"</div>` : ""}
+    ${e.quote ? `<details class="qd"><summary></summary><div class="quote">"${esc(e.quote)}"</div></details>` : ""}
     <div class="footline">
       <span>${fmtDate(e.retrieved_at)}</span>
       ${e.source_host ? `<span class="sep">·</span><a href="${esc(e.source_url)}" target="_blank" rel="noopener">${esc(e.source_host)}</a>` : ""}
@@ -604,6 +647,14 @@ async function selectEntity(id) {
       ${aliases.length ? `<div class="aliases">also known as ${aliases.map(esc).join(", ")}</div>` : ""}
       ${d.summary ? `<div class="summary">${esc(d.summary)}</div>` : ""}
       <div class="idline">#${d.id}${d.registry_id ? ` · ${esc(d.registry_id)}` : ""}</div>
+      ${d.play ? `<div class="playstrip${(!d.play.next_date || d.play.next_date < new Date().toISOString().slice(0,10)) ? " stalled" : ""}">
+        <span class="pstate">play: ${esc(d.play.state)}</span>
+        <span class="pnext">${esc(d.play.next_action || "no next action set")}${d.play.next_date ? " by " + esc(d.play.next_date) : ""}</span>
+        <span class="powner">${esc(d.play.owner || "unowned")}</span>
+      </div>` : ""}
+      ${(d.milestones || []).length ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+        ${d.milestones.map(m => `<span class="dlchip">${esc(m.due_date || "watch")} · ${esc(m.label.slice(0, 40))}${m.amount_dkk ? " · " + fmtAmt(m.amount_dkk) : ""}</span>`).join("")}
+      </div>` : ""}
     </div>
     ${d.prospect ? `<div class="dsection">
       <h3>Prospect assessment</h3>
@@ -627,7 +678,9 @@ async function selectEntity(id) {
     </div>` : ""}
     <div class="dsection">
       <h3>Evidence (${d.evidence.length})</h3>
-      ${d.evidence.length ? d.evidence.map(e => citationHtml(e, false)).join("") : `<div class="empty">No claims recorded yet.</div>`}
+      ${d.evidence.length ? d.evidence.slice(0, 5).map(e => citationHtml(e, false)).join("") : `<div class="empty">No claims recorded yet.</div>`}
+      ${d.evidence.length > 5 ? `<div id="evMore" style="display:none">${d.evidence.slice(5).map(e => citationHtml(e, false)).join("")}</div>
+        <span class="showmore" onclick="this.previousElementSibling.style.display='block'; this.remove()">show all ${d.evidence.length} claims ▾</span>` : ""}
     </div>
     ${(d.edges_out.length || d.edges_in.length) ? `<div class="dsection">
       <h3>Relationships (${d.edges_out.length + d.edges_in.length})</h3>
@@ -669,6 +722,12 @@ async function loadProspects() {
       </div>
       ${p.angle ? `<div class="angle"><b>Angle:</b> ${esc(p.angle)}</div>` : ""}
       ${p.timing ? `<div class="timing">${esc(p.timing)}</div>` : ""}
+      ${p.play ? `<div class="playstrip${p.play.stalled ? " stalled" : ""}">
+        <span class="pstate">play: ${esc(p.play.state)}</span>
+        <span class="pnext">${esc(p.play.next_action || "no next action set")}${p.play.next_date ? " by " + esc(p.play.next_date) : ""}</span>
+        <span class="powner">${esc(p.play.owner || "unowned")}</span>
+        ${p.next_deadline ? `<span class="dlchip">${esc(p.next_deadline.due_date)} · ${esc(p.next_deadline.label.slice(0, 30))}</span>` : ""}
+      </div>` : (p.next_deadline ? `<div class="playstrip"><span class="pnext">no play open</span><span class="dlchip">${esc(p.next_deadline.due_date)} · ${esc(p.next_deadline.label.slice(0, 30))}</span></div>` : "")}
       <div class="prfoot">
         ${p.contacts.length ? `<span class="contactline">contact: ${p.contacts.map(c => `<b>${esc(c.name)}</b>${c.attrs.role ? " (" + esc(c.attrs.role) + ")" : ""}`).join(", ")}</span>` : `<span>no contact yet</span>`}
         <span class="sep">·</span><span>evidence: ${p.evidence_refs.map(r => "#" + r).join(", ") || "none"}</span>
@@ -790,13 +849,13 @@ function isoOf(d) {
   return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
 }
 
-async function loadPatterns() {
+async function loadPatterns(targetId = "view-patterns") {
   const p = await api("/api/patterns");
   const bar = (val, max) => `<span class="bar"><i style="width:${Math.round(100 * val / Math.max(1, max))}%"></i></span>`;
   const maxEnt = Math.max(1, ...p.by_country.map(r => r.entities));
   const maxVec = Math.max(1, ...p.by_vector.map(r => r.entities));
   const maxCls = Math.max(1, ...p.classifications.map(r => r.n));
-  $("view-patterns").innerHTML = `<div class="patgrid">
+  $(targetId).innerHTML = `<div class="patgrid">
     <div class="patcard"><h3>By country · entities / claims / pipeline DKK</h3>
       ${p.by_country.map(r => `<div class="patrow"><span class="lbl num">${esc(r.country)}</span>${bar(r.entities, maxEnt)}
         <span class="v">${r.entities} · ${r.evidence}${r.money_dkk ? " · " + fmtDkk(r.money_dkk) : ""}</span></div>`).join("")}
@@ -824,14 +883,16 @@ async function loadPatterns() {
 async function loadQuestions() {
   const qs = await api("/api/questions");
   const maxCov = Math.max(1, ...qs.map(q => q.coverage));
-  $("view-questions").innerHTML = qs.map(q => `<div class="qcard">
+  $("view-questions").innerHTML = qs.map(q => `<div class="qcard" data-num="${q.num}" style="cursor:pointer" title="open the ${q.coverage} claim(s) behind this question">
     <div class="qn">${String(q.num).padStart(2, "0")}</div>
     <div class="qbody">
       <div class="qtext">${esc(q.question)}</div>
       <div class="qbar-row"><div class="qbar"><i style="width:${Math.round(100 * q.coverage / maxCov)}%"></i></div>
-      <span class="qcov">${q.coverage} claim${q.coverage === 1 ? "" : "s"}</span></div>
+      <span class="qcov">${q.coverage} claim${q.coverage === 1 ? "" : "s"} →</span></div>
     </div>
   </div>`).join("");
+  $("view-questions").querySelectorAll(".qcard").forEach(el =>
+    el.addEventListener("click", () => openEvidenceForQuestion(el.dataset.num)));
   const sel = $("evQuestion");
   if (sel.options.length <= 1) {
     qs.forEach(q => {
@@ -845,7 +906,26 @@ async function loadQuestions() {
 async function loadCockpit() {
   const c = await api("/api/cockpit");
   const copyBtn = cmd => cmd ? `<div class="ck-cmd"><code>${esc(cmd)}</code><button data-cmd="${esc(cmd)}">copy</button></div>` : "";
-  const actHtml = c.act_now.length ? c.act_now.map(a => `
+  // Group repetitive kinds into one card with table rows: nine overdue
+  // funding cards were 1,700px of the same shape; a grouped table is ~300.
+  const byKind = {};
+  c.act_now.forEach(a => (byKind[a.kind] = byKind[a.kind] || []).push(a));
+  const groupCard = (items, title) => {
+    const maxU = Math.max(...items.map(a => a.urgency));
+    const dkk = items.reduce((s, a) => s + (a.amount_dkk || 0), 0);
+    return `<div class="ck-card ck-group u${maxU}">
+      <div class="row1"><span class="urg urg-${maxU}">${"!".repeat(maxU)}</span>
+        <span class="lbl">${items.length} ${esc(title)}</span>
+        ${dkk ? `<span class="mono">${fmtAmt(dkk)} DKK</span>` : ""}</div>
+      <table>${items.map(a => `<tr title="${esc(a.detail || "")}">
+        <td class="mono">${a.days !== null && a.days !== undefined ? (a.days < 0 ? a.days + "d" : "+" + a.days + "d") : ""}</td>
+        <td>${esc(a.label)}</td>
+        <td class="mono">${a.amount_dkk ? fmtAmt(a.amount_dkk) : ""}</td>
+        <td>${a.cmd ? `<button class="minicopy" data-cmd="${esc(a.cmd)}">copy</button>` : ""}</td>
+      </tr>`).join("")}</table>
+    </div>`;
+  };
+  const singleCard = a => `
     <div class="ck-card u${a.urgency}">
       <div class="row1">
         <span class="urg urg-${a.urgency}">${"!".repeat(a.urgency)}</span>
@@ -857,7 +937,13 @@ async function loadCockpit() {
       </div>
       ${a.detail ? `<div class="det">${esc(a.detail)}</div>` : ""}
       ${copyBtn(a.cmd)}
-    </div>`).join("") : `<div class="empty">Nothing demands action right now.</div>`;
+    </div>`;
+  const KIND_TITLES = {"milestone": "dated items needing action", "suspect-decision": "suspect decisions",
+                       "challenge": "challenged rows to adjudicate"};
+  const actHtml = c.act_now.length ? Object.entries(byKind).map(([k, items]) =>
+    (items.length > 2 && KIND_TITLES[k]) ? groupCard(items, KIND_TITLES[k])
+      : items.map(singleCard).join("")).join("")
+    : `<div class="empty">Nothing demands action right now.</div>`;
 
   const ceil = v => {
     if (!c.capability_included) return `<span class="mono">local only</span>`;
@@ -873,13 +959,27 @@ async function loadCockpit() {
       <td>${v.warm_hot || 0}</td><td>${v.money_dkk ? fmtAmt(v.money_dkk) : "—"}</td>
       <td>${ceil(v)}</td><td>${(v.capability && v.capability.refuted) || ""}</td></tr>`).join("")}</table>`;
 
+  // Plays: a summary strip plus exceptions only. Twenty identical stalled
+  // cards taught nothing; the strip says the state, the cards show what
+  // actually needs a decision (dated-and-overdue, or recently moved).
   const LANES = ["identified", "prepared", "contacted", "in-conversation", "parked"];
   const playCard = p => `<div class="playcard${p.stalled ? " stalled" : ""}">
       <div class="nm">${esc(p.name)}</div>
       <div class="nx">${p.stalled ? "<b>STALLED</b> — " : ""}${esc(p.next_action || "no next action")}${p.next_date ? " by " + esc(p.next_date) : ""} · ${esc(p.owner || "unowned")}</div>
     </div>`;
-  const lanesHtml = `<div class="ck-lanes">${LANES.map(l => `<div class="ck-lane"><h4>${l} (${c.plays.filter(p => p.state === l).length})</h4>
-      ${c.plays.filter(p => p.state === l).map(playCard).join("")}</div>`).join("")}</div>`;
+  const counts = LANES.map(l => [l, c.plays.filter(p => p.state === l).length]).filter(([, n]) => n);
+  const noDate = c.plays.filter(p => !p.next_date).length;
+  const overduePlays = c.plays.filter(p => p.next_date && p.stalled);
+  const weekAgo = new Date(Date.now() - 7 * 864e5).toISOString();
+  const moved = c.plays.filter(p => p.updated_at > weekAgo && !p.stalled);
+  const stripHtml = `<div class="ck-strip">
+      ${counts.map(([l, n]) => `<span>${l} <b>${n}</b></span>`).join("")}
+      ${noDate ? `<span class="urg urg-2">!!</span><span><b>${noDate}</b> without a next action — set them (<code style="font-size:10px">db.py play advance &lt;id&gt; --state ... --next ... --by ...</code>)</span>` : ""}
+    </div>`;
+  const exceptions = overduePlays.slice(0, 6).map(playCard).join("") + moved.slice(0, 4).map(playCard).join("");
+  const populated = counts.length;
+  const lanesHtml = stripHtml + (exceptions ? exceptions :
+    (populated > 1 ? `<div class="ck-lanes">${LANES.map(l => { const ps = c.plays.filter(p => p.state === l); return ps.length ? `<div class="ck-lane"><h4>${l} (${ps.length})</h4>${ps.map(playCard).join("")}</div>` : ""; }).join("")}</div>` : ""));
 
   const cc = c.claim_ceiling;
   const ccHtml = cc ? `<div class="ck-health" style="margin-bottom:8px">
@@ -901,7 +1001,12 @@ async function loadCockpit() {
     <div class="ck-band"><h2>Sellable-now matrix<span class="n">market heat × capability ceiling</span></h2>${matrixHtml}</div>
     <div class="ck-band"><h2>Plays<span class="n">${c.plays.length} open</span></h2>${lanesHtml}</div>
     <div class="ck-band"><h2>Claim ceiling</h2>${ccHtml}</div>
-    <div class="ck-band"><h2>Health</h2>${healthHtml}</div>`;
+    <div class="ck-band"><h2>Health</h2>${healthHtml}</div>
+    <div class="ck-band"><h2>Patterns</h2>
+      <details id="ckPatternsD"><summary class="showmore">open the patterns boards ▾</summary><div id="ckPatterns"></div></details></div>`;
+  $("ckPatternsD").addEventListener("toggle", () => {
+    if ($("ckPatternsD").open && !$("ckPatterns").innerHTML) loadPatterns("ckPatterns");
+  });
   $("view-cockpit").querySelectorAll("[data-cmd]").forEach(b => b.addEventListener("click", async () => {
     try { await navigator.clipboard.writeText(b.dataset.cmd); b.textContent = "copied"; }
     catch (e) { const t = document.createElement("textarea"); t.value = b.dataset.cmd;
@@ -910,15 +1015,38 @@ async function loadCockpit() {
   }));
 }
 
+// Library is one tab with two modes (Organizations | Claims): both mode
+// switches (one per facet column) stay in sync, and the Claims mode swaps
+// the active view without leaving the tab.
+let libMode = "entities";
+function setLibMode(m) {
+  libMode = m;
+  document.querySelectorAll(".modeswitch div").forEach(d =>
+    d.classList.toggle("active", d.dataset.mode === m));
+  $("view-entities").classList.toggle("active", m === "entities");
+  $("view-evidence").classList.toggle("active", m === "evidence");
+  if (m === "evidence") loadEvidence(); else loadEntities();
+}
+document.querySelectorAll(".modeswitch div").forEach(d =>
+  d.addEventListener("click", () => setLibMode(d.dataset.mode)));
+
+function openEvidenceForQuestion(num) {
+  document.querySelectorAll(".tab").forEach(x => x.classList.toggle("active", x.dataset.view === "entities"));
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  state.view = "entities";
+  const sel = $("evQuestion");
+  if (sel) sel.value = String(num);
+  setLibMode("evidence");
+}
+
 document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => {
   document.querySelectorAll(".tab").forEach(x => x.classList.toggle("active", x === t));
   document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + t.dataset.view));
   state.view = t.dataset.view;
   if (state.view === "cockpit") loadCockpit();
-  if (state.view === "evidence") loadEvidence();
+  if (state.view === "entities") setLibMode(libMode);
   if (state.view === "questions") loadQuestions();
   if (state.view === "prospects") loadProspects();
-  if (state.view === "patterns") loadPatterns();
   if (state.view === "calendar") loadCalendar();
 }));
 
@@ -934,6 +1062,24 @@ $("search").addEventListener("input", e => {
 ["evQuestion", "evStakes", "evValidOnly", "evCountry", "evVector"].forEach(id =>
   $(id).addEventListener("change", loadEvidence));
 ["prCountry", "prStatus"].forEach(id => $(id).addEventListener("change", loadProspects));
+
+// Keyboard: "/" focuses search, Esc clears it (or closes the entity
+// detail), 1-5 switch tabs. A daily two-person tool earns its shortcuts.
+document.addEventListener("keydown", e => {
+  const typing = /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName);
+  if (e.key === "/" && !typing) { e.preventDefault(); $("search").focus(); return; }
+  if (e.key === "Escape") {
+    if (typing) { document.activeElement.blur(); return; }
+    if ($("search").value) { $("search").value = ""; $("search").dispatchEvent(new Event("input", {bubbles: true})); return; }
+    if (state.selectedEntity) { state.selectedEntity = null; $("detail").style.display = "none"; $("detailEmpty").style.display = "flex"; }
+    return;
+  }
+  if (!typing && e.key >= "1" && e.key <= "5") {
+    const tabs = [...document.querySelectorAll(".tab")];
+    const t = tabs[parseInt(e.key) - 1];
+    if (t) t.click();
+  }
+});
 
 /* boot happens after decrypt (static build) */
 </script>
