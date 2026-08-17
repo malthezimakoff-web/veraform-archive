@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<script>window.VF = {"buildTs": "2026-08-17T20:15:30.489970+00:00", "core": "data-b185982c.enc", "coreDigest": "b185982c886edd21c281e74383e1660b43dee4191ffbbad4fff469100b5e758f", "details": "details-36da6904.enc", "detailsDigest": "36da6904e6212e58fbc411b302ee522b5f88cacc5d5d337db6bab0b708367e91", "keyFp": "84c0fcd1", "schema": 2};</script>
+<script>window.VF = {"buildTs": "2026-08-17T20:26:24.217382+00:00", "core": "data-e4da263c.enc", "coreDigest": "e4da263c5f4aa877ee08d4aa72ccb0aad175c2e766ce758ddd28f37a1a51260f", "details": "details-19a5742c.enc", "detailsDigest": "19a5742c78668e6d250762c205126ab08100d7e6c12ebd6c6a882141b7e94cba", "keyFp": "84c0fcd1", "schema": 2};</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Veraform research archive</title>
@@ -592,6 +592,19 @@
   .chg-group h3 { font-family: var(--serif); font-size: 15px; font-weight: 650; margin-bottom: 8px;
     padding-bottom: 6px; border-bottom: 1px solid var(--line); }
   .chg-group h3 .n { font-family: var(--mono); font-size: 11px; color: var(--dim); margin-left: 6px; }
+  .chg-dupes { font-family: var(--mono); font-size: 11px; color: var(--dim); font-style: normal; }
+  .chg-summary { font-family: var(--mono); font-size: 12px; color: var(--muted);
+    letter-spacing: 0.04em; padding: 2px 0 14px; }
+  .chg-summary b { color: var(--text); font-variant-numeric: tabular-nums; }
+  .chg-lead { margin-bottom: 22px; }
+  .chg-lead h3 { border-bottom-color: var(--accent-dim); }
+  .chg-lead-none { font-family: var(--serif); font-size: 14px; color: var(--muted);
+    padding: 2px 0 18px; font-style: italic; }
+  .chg-rest-wrap > summary { font-family: var(--mono); font-size: 11.5px;
+    letter-spacing: 0.06em; color: var(--dim); cursor: pointer; padding: 8px 0;
+    border-top: 1px solid var(--line); }
+  .chg-rest-wrap > summary:hover { color: var(--muted); }
+  .chg-rest-wrap[open] > summary { margin-bottom: 10px; }
   .chg-sub { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em;
     color: var(--dim); margin: -2px 0 8px; }
   .chg-rollup { list-style: none; margin: 0 0 4px; padding: 0; }
@@ -2513,7 +2526,12 @@ function vfNormalizeChangeEntry(raw) {
     if (tbl === "evidence") evId = rowId;
     else if (tbl === "entities") entityId = rowId;
   }
-  return { verb, at, subject, summary, entityId, evId };
+  // tbl/direction/note are kept because significance ranking needs them: a
+  // retraction that a prospect or decision rests on is not the same event as
+  // one more routine evidence row, and the digest must not present them alike.
+  const direction = raw.direction || raw.grade_direction || "none";
+  const note = raw.note || raw.reason || "";
+  return { verb, at, subject, summary, entityId, evId, tbl, direction, note };
 }
 
 async function loadChanges() {
@@ -2557,9 +2575,17 @@ async function loadChanges() {
   const byVerb = {};
   entries.forEach(e => (byVerb[e.verb] = byVerb[e.verb] || []).push(e));
 
+  // Cascade rows have no entity to name, so the exporter falls back to the
+  // note as the subject -- and then the sentence repeats it verbatim. Show the
+  // subject only when it adds something the sentence does not already say.
+  const vfChgShowSubject = e => {
+    if (!e.subject) return false;
+    const sub = e.subject.trim().toLowerCase();
+    return !(e.summary || "").toLowerCase().includes(sub.slice(0, 40));
+  };
   const entryHtml = e => `<div class="chg-entry${e.verb === "retracted" ? " chg-retracted" : ""}">
-    <div class="chg-meta">${e.at ? `<span class="mono">${esc(fmtDate(e.at))}</span>` : ""}${e.subject ? `${e.at ? " · " : ""}<b>${esc(e.subject)}</b>` : ""}</div>
-    <div class="chg-sentence">${esc(e.summary)}</div>
+    <div class="chg-meta">${e.at ? `<span class="mono">${esc(fmtDate(e.at))}</span>` : ""}${vfChgShowSubject(e) ? `${e.at ? " · " : ""}<b>${esc(e.subject)}</b>` : ""}</div>
+    <div class="chg-sentence">${esc(e.summary)}${e.dupes ? ` <span class="chg-dupes">and ${e.dupes} more like it</span>` : ""}</div>
     ${(e.entityId != null || e.evId != null) ? `<a href="#/${e.entityId != null ? "entity/" + e.entityId : "evidence/" + e.evId}" class="chg-link">open →</a>` : ""}
   </div>`;
 
@@ -2592,21 +2618,70 @@ async function loadChanges() {
     return `<ul class="chg-rollup">${head}${rest}</ul>`;
   };
 
-  const groupHtml = (key, title) => {
-    const items = byVerb[key] || [];
-    if (!items.length) return "";
-    // Individually list anything that carries its own note or named field
-    // changes -- those are real editorial events. Roll up the rest.
-    const notable = items.filter(e => e.verb !== "added");
-    const bulk = items.filter(e => e.verb === "added");
-    const ROLLUP_AT = 12;
-    const body = (bulk.length > ROLLUP_AT)
-      ? rollupHtml(bulk) + notable.map(entryHtml).join("")
-      : items.map(entryHtml).join("");
-    const sub = (bulk.length > ROLLUP_AT)
-      ? `<div class="chg-sub">grouped by source — ${bulk.length} claims</div>` : "";
-    return `<div class="chg-group"><h3>${title} <span class="n">${items.length}</span></h3>${sub}${body}</div>`;
+  // Significance, not chronology. Grouping 500 rows under four headings is
+  // still a commit log -- 153 blocks on one screen, nothing saying which
+  // matter. The base already knows: a retraction that a prospect or decision
+  // rests on changes what we may say out loud; one more evidence row does not.
+  const SIG = e => {
+    let s = 0;
+    if (e.verb === "retracted") s += 5;
+    if (e.verb === "superseded") s += 4;
+    if (e.direction === "down") s += 4;
+    if (e.direction === "up") s += 1;
+    if (e.tbl === "decisions") s += 5;
+    if (e.tbl === "prospects") s += 3;
+    if (e.tbl === "entities") s += 1;
+    if (e.note) s += 2;              // somebody wrote a reason: editorial act
+    if (e.verb === "added" && e.tbl === "evidence") s -= 2;   // the routine case
+    return s;
   };
+  const HEADLINE_MAX = 8;
+  const scored = entries.map(e => ({ e, s: SIG(e) })).sort((a, b) =>
+    b.s - a.s || String(b.e.at).localeCompare(String(a.e.at)));
+  // Eight repetitions of one machine-written sentence is not eight things
+  // worth attention. Collapse identical summaries and say how many there were.
+  const seenSummary = new Map();
+  const headline = [];
+  for (const { e, s } of scored) {
+    if (s < 4) continue;
+    const k = (e.summary || "").slice(0, 160);
+    if (seenSummary.has(k)) { seenSummary.get(k).dupes++; continue; }
+    const row = { ...e, dupes: 0 };
+    seenSummary.set(k, row);
+    headline.push(row);
+    if (headline.length >= HEADLINE_MAX) break;
+  }
+  const headlineKeys = new Set([...seenSummary.keys()]);
+  const rest = entries.filter(e => !headlineKeys.has((e.summary || "").slice(0, 160)));
+
+  const restGroupHtml = (key, title) => {
+    const items = rest.filter(e => e.verb === key);
+    if (!items.length) return "";
+    // Everything below the fold is counted, not narrated: one line per source
+    // for bulk, plain sentences only where few enough to be readable.
+    const body = items.length > 12 ? rollupHtml(items) : items.map(entryHtml).join("");
+    return `<div class="chg-group"><h3>${title} <span class="n">${items.length}</span></h3>${body}</div>`;
+  };
+
+  const counts = GROUPS.map(([k, t]) => [t.toLowerCase(), (byVerb[k] || []).length])
+    .filter(([, n]) => n);
+  const summaryLine = counts.length
+    ? counts.map(([t, n]) => `<b>${n}</b> ${t}`).join(" · ")
+    : "nothing recorded";
+
+  const headlineHtml = headline.length
+    ? `<div class="chg-group chg-lead"><h3>Worth your attention <span class="n">${headline.length}</span></h3>
+        ${headline.map(entryHtml).join("")}</div>`
+    : (entries.length
+        ? `<div class="chg-lead-none">No retractions, downgrades or decision changes in this window — only routine additions.</div>`
+        : "");
+
+  const restHtml = rest.length
+    ? `<details class="chg-rest-wrap"${headline.length ? "" : " open"}>
+         <summary>everything else — ${rest.length} change${rest.length === 1 ? "" : "s"}</summary>
+         ${GROUPS.map(([k, t]) => restGroupHtml(k, t)).join("")}
+       </details>`
+    : "";
 
   // An epoch date in the picker reads as a bug; leave it empty until a real
   // visit is recorded, and let the prose below explain the first-run state.
@@ -2628,7 +2703,9 @@ async function loadChanges() {
       : newCount
         ? `<div class="chg-banner"><span>${newCount} change${newCount === 1 ? "" : "s"} since ${esc(dateVal)}</span></div>`
         : `<div class="empty" style="text-align:left;padding:20px 0"><div style="font-family:var(--serif);font-size:15px;color:var(--text)">Nothing has changed since ${esc(dateVal)}.</div></div>`}
-    ${GROUPS.map(([k, t]) => groupHtml(k, t)).join("") || `<div class="empty">No changelog rows recorded.</div>`}
+    ${entries.length ? `<div class="chg-summary">${summaryLine}</div>` : ""}
+    ${headlineHtml}
+    ${restHtml || (entries.length ? "" : `<div class="empty">No changelog rows recorded.</div>`)}
   </div>`;
 
   const since = $("chgSince");

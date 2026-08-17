@@ -1,9 +1,9 @@
 {
-  "build_ts": "2026-08-17T20:15:30.489970+00:00",
-  "core": "data-b185982c.enc",
-  "core_digest": "b185982c886edd21c281e74383e1660b43dee4191ffbbad4fff469100b5e758f",
-  "details": "details-36da6904.enc",
-  "details_digest": "36da6904e6212e58fbc411b302ee522b5f88cacc5d5d337db6bab0b708367e91",
+  "build_ts": "2026-08-17T20:26:24.217382+00:00",
+  "core": "data-e4da263c.enc",
+  "core_digest": "e4da263c5f4aa877ee08d4aa72ccb0aad175c2e766ce758ddd28f37a1a51260f",
+  "details": "details-19a5742c.enc",
+  "details_digest": "19a5742c78668e6d250762c205126ab08100d7e6c12ebd6c6a882141b7e94cba",
   "key_fp": "84c0fcd1",
   "schema": 2
 }
