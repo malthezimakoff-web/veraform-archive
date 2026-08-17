@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<script>window.VF = {"buildTs": "2026-08-17T15:40:38.595453+00:00", "core": "data-5a37fd18.enc", "coreDigest": "5a37fd18f99ed099f4c1e76dc98e011a229a6c82e864633ada5436d680ba71b7", "details": "details-9a7b0945.enc", "detailsDigest": "9a7b0945512a7a35f9e7251d56bf32a05cdae093e0e4368cb48cd5f04527adb7", "keyFp": "84c0fcd1", "schema": 2};</script>
+<script>window.VF = {"buildTs": "2026-08-17T17:43:47.401497+00:00", "core": "data-ec09e2e4.enc", "coreDigest": "ec09e2e431959071e9d7df99074765f9800e025d6be3d059b01095114150e7a7", "details": "details-a5c513a2.enc", "detailsDigest": "a5c513a24aa47e280cbdcf1061e0491de8e2796ec713f79ca2feebe9fb0aba48", "keyFp": "d4e33f89", "schema": 2};</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Veraform research archive</title>
@@ -186,12 +186,20 @@
     .stamp .st-row { display: contents; }
     .stamp .st-foot { margin: 0 0 0 auto; padding: 0; border: none; }
   }
-  .totals { margin-left: auto; display: flex; gap: 18px; font-size: 12px; color: var(--muted); font-family: var(--mono); }
+  /* The six tabs are navigation and must never be clipped; the totals are
+     ambient and may shrink or drop out. Before this, "Calendar" sat ~18px
+     inside the scroll overflow at 1440px because .totals took its space. */
+  .totals { margin-left: auto; display: flex; gap: 18px; font-size: 12px; color: var(--muted);
+    font-family: var(--mono); min-width: 0; flex-shrink: 1; overflow: hidden; }
+  /* Raised from 1180px when Verticals became a seventh tab: at 1280px the
+     totals were being squeezed to "4:" / "e:" between the tabs and the theme
+     switch. Tabs are navigation and win; totals are ambient and drop out. */
+  @media (max-width: 1400px) { .totals { display: none; } }
   .totals b { color: var(--text); font-weight: 600; }
   .asof { font-family: var(--mono); font-size: 11px; color: var(--dim); white-space: nowrap; }
   .asof.stale { color: var(--warn); }
   .asof.very-stale { color: var(--bad); font-weight: 600; }
-  .tabs { display: flex; gap: 2px; }
+  .tabs { display: flex; gap: 2px; flex-shrink: 0; }
   .tab {
     padding: 6px 14px; border-radius: 5px; font-size: 13px; color: var(--muted); cursor: pointer;
     border: 1px solid transparent; user-select: none;
@@ -584,6 +592,17 @@
   .chg-group h3 { font-family: var(--serif); font-size: 15px; font-weight: 650; margin-bottom: 8px;
     padding-bottom: 6px; border-bottom: 1px solid var(--line); }
   .chg-group h3 .n { font-family: var(--mono); font-size: 11px; color: var(--dim); margin-left: 6px; }
+  .chg-sub { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em;
+    color: var(--dim); margin: -2px 0 8px; }
+  .chg-rollup { list-style: none; margin: 0 0 4px; padding: 0; }
+  .chg-rollup li { display: flex; align-items: baseline; gap: 8px; padding: 5px 0;
+    border-bottom: 1px solid var(--line2); font-size: 14px; }
+  .chg-rollup li:last-child { border-bottom: none; }
+  .chg-rollup a { color: var(--text); text-decoration: none; border-bottom: 1px solid var(--line); }
+  .chg-rollup a:hover { border-bottom-color: var(--accent); }
+  .chg-rollup .chg-n { margin-left: auto; font-size: 11px; color: var(--muted);
+    font-variant-numeric: tabular-nums; }
+  .chg-rollup .chg-rest { color: var(--dim); font-style: italic; }
   .chg-entry { padding: 10px 0; border-bottom: 1px solid var(--line2); }
   .chg-entry:last-child { border-bottom: none; }
   .chg-entry.chg-retracted .chg-sentence { color: var(--bad); }
@@ -604,6 +623,128 @@
      without virtualization (explicitly ruled out by the proposal) */
   .evlist > .evrow2, .elist .erow, .prlist .prcard {
     content-visibility: auto; contain-intrinsic-size: 0 140px;
+  }
+
+  /* ---- Verticals tab (2b): vector cards -> country x sector fit matrix ->
+     use_case five-panel page. Matrix rules are binding (table-craft
+     research): lightness carries ordering (no hue -- gold stays reserved
+     for the verification stamp only), value+glyph printed in every cell,
+     fixed colour range across the warm-neutral --n scale (never rescaled
+     per vertical), sticky headers with distinct z-indices and
+     gradient-faked borders (CSS borders scroll away on sticky cells),
+     corner cell z-index 3.
+     The `?` vs `-` distinction (export-lane contract, 2026-08-17): the
+     exporter only emits a matrix_cells row for a country x sector pair it
+     actually has a use_case for, and every emitted row is searched:true --
+     including method_lock "-" (searched, Nord2000/etc is demonstrably NOT
+     the method here, a real and valuable finding). So "?" is rendered for
+     any pair with NO matrix_cells row at all (nobody has looked), never for
+     a present "-" row. A `searched:false`/null row, if one is ever emitted,
+     is also folded into "?" defensively. ---- */
+  #view-verticals.active { display: block; }
+  #view-verticals { padding: 22px 28px 60px; overflow-y: auto; }
+  .vert-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; max-width: 1180px; }
+  .vertcard { background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+    border-left: 3px solid var(--line); padding: 14px 16px; cursor: pointer; }
+  .vertcard:hover { border-color: var(--accent-dim); }
+  .vertcard .vname { font-family: var(--serif); font-size: 17px; font-weight: 650; text-transform: capitalize; }
+  .vertcard .vrow { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; margin-top: 7px; font-size: 12px; color: var(--muted); }
+  .vertcard .vrow b { font-family: var(--mono); color: var(--text); font-variant-numeric: tabular-nums; }
+  .vertcard .vfoot { margin-top: 8px; font-size: 11px; color: var(--dim); }
+
+  .mtx-crumb { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; font-size: 12.5px; color: var(--muted); flex-wrap: wrap; }
+  .mtx-crumb .back { cursor: pointer; color: var(--accent); font-family: var(--mono); font-size: 12px; }
+  .mtx-crumb .vname { font-family: var(--serif); font-size: 20px; font-weight: 650; color: var(--text); text-transform: capitalize; }
+
+  .mtx-note { font-size: 11.5px; color: var(--dim); margin: -4px 0 14px; font-style: italic; font-family: var(--serif); }
+
+  .mtx-region { overflow: auto; max-width: 100%; border: 1px solid var(--line); border-radius: 6px; margin-bottom: 16px; }
+  .mtx-region:focus { outline: 2px solid var(--accent-dim); outline-offset: -2px; }
+  table.mtx { border-collapse: separate; border-spacing: 0; font-size: 12px; min-width: 100%; }
+  table.mtx th, table.mtx td { padding: 0; }
+  table.mtx th.mtx-corner { position: sticky; top: 0; left: 0; z-index: 3; background: var(--panel);
+    min-width: 140px; text-align: left; padding: 8px 10px; font-family: var(--mono); font-size: 10px;
+    letter-spacing: .05em; color: var(--dim);
+    background-image: linear-gradient(var(--line), var(--line)), linear-gradient(var(--line), var(--line));
+    background-repeat: no-repeat; background-size: 100% 1px, 1px 100%; background-position: bottom, right; }
+  table.mtx th.mtx-col { position: sticky; top: 0; z-index: 2; background: var(--panel);
+    padding: 8px 8px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .03em; color: var(--muted);
+    text-align: center; min-width: 68px; white-space: nowrap;
+    background-image: linear-gradient(var(--line), var(--line)); background-repeat: no-repeat;
+    background-size: 100% 1px; background-position: bottom; }
+  table.mtx th.mtx-row { position: sticky; left: 0; z-index: 1; background: var(--panel2);
+    padding: 7px 10px; font-family: var(--mono); font-size: 11px; color: var(--text); text-align: left;
+    white-space: nowrap;
+    background-image: linear-gradient(90deg, var(--line), var(--line)); background-repeat: no-repeat;
+    background-size: 1px 100%; background-position: right; }
+  table.mtx td.mtx-cell { text-align: center; vertical-align: middle; min-width: 68px; height: 40px;
+    font-family: var(--mono); font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--line2);
+    border-right: 1px solid var(--line2); cursor: default; }
+  table.mtx td.mtx-cell.link { cursor: pointer; }
+  table.mtx td.mtx-cell .g { font-size: 12.5px; font-weight: 700; }
+  table.mtx td.mtx-cell .n { display: block; font-size: 9px; color: var(--dim); margin-top: 1px; }
+  table.mtx td.mtx-cell.link:hover { outline: 2px solid var(--accent-dim); outline-offset: -2px; }
+
+  /* the ordinal scale itself: lightness only, no hue, fixed range, shared
+     by matrix cells, the legend swatches, the use_case lock badge and the
+     mobile per-country list badges */
+  .mtx-cell.lvl-1, .sw.lvl-1, .uc-lockbadge.lvl-1, .badge2.lvl-1 { background: var(--n2); color: var(--muted); }
+  .mtx-cell.lvl-2, .sw.lvl-2, .uc-lockbadge.lvl-2, .badge2.lvl-2 { background: var(--n4); color: var(--text); }
+  .mtx-cell.lvl-3, .sw.lvl-3, .uc-lockbadge.lvl-3, .badge2.lvl-3 { background: var(--n6); color: var(--text); }
+  .mtx-cell.lvl-4, .sw.lvl-4, .uc-lockbadge.lvl-4, .badge2.lvl-4 { background: var(--n8); color: var(--n1); font-weight: 800; }
+  .mtx-cell.lvl-q, .sw.lvl-q, .uc-lockbadge.lvl-q, .badge2.lvl-q {
+    background: repeating-linear-gradient(45deg, var(--panel2), var(--panel2) 5px, var(--panel) 5px, var(--panel) 10px);
+    color: var(--dim); font-style: italic; }
+
+  .mtx-legend { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; margin-bottom: 14px;
+    font-size: 11.5px; color: var(--muted); }
+  .mtx-legend .lg-item { display: flex; align-items: center; gap: 7px; }
+  .mtx-legend .sw { width: 26px; height: 18px; border-radius: 3px; display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 10px; font-weight: 700; }
+
+  .uc-lockbadge { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono);
+    font-size: 13px; padding: 4px 11px; border-radius: 4px; }
+
+  /* mobile: per-country list replaces the grid rather than shrinking cells
+     below legibility -- a 12px cell grid is not a usable phone matrix */
+  .mtx-mobile { display: none; }
+  @media (max-width: 700px) {
+    .mtx-region { display: none; }
+    .mtx-mobile { display: block; }
+  }
+  .mtx-mobile .mc-country { border: 1px solid var(--line); border-radius: 6px; margin-bottom: 10px; overflow: hidden; }
+  .mtx-mobile .mc-country summary { cursor: pointer; padding: 10px 14px; font-family: var(--serif); font-size: 14.5px;
+    font-weight: 600; background: var(--panel); list-style: none; display: flex; justify-content: space-between; min-height: 40px; align-items: center; }
+  .mtx-mobile .mc-country summary::-webkit-details-marker { display: none; }
+  .mtx-mobile .mc-row { display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-top: 1px solid var(--line2);
+    font-size: 13px; min-height: 40px; }
+  .mtx-mobile .mc-row.link { cursor: pointer; }
+  .mtx-mobile .mc-row.link:hover { background: var(--panel2); }
+  .mtx-mobile .mc-row .sector { flex: 1; }
+  .mtx-mobile .mc-row .badge2 { font-family: var(--mono); font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 3px; }
+
+  /* use_case page: five panels, reusing dsection/citation/edgerow language
+     already established elsewhere so it reads as the same archive */
+  #view-usecase .uc-wrap { max-width: 900px; padding: 22px 28px 60px; }
+  .uc-kicker { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; color: var(--dim); margin-bottom: 6px; }
+  .uc-h1 { font-family: var(--serif); font-size: 26px; font-weight: 650; margin-bottom: 6px; text-wrap: balance; }
+  .uc-sub { font-size: 14px; color: var(--muted); max-width: 65ch; line-height: 1.55; margin-bottom: 6px; }
+  .uc-panel { margin-top: 28px; }
+  .uc-panel h3 { font-size: 12px; letter-spacing: .6px; color: var(--dim); margin-bottom: 10px;
+    padding-bottom: 7px; border-bottom: 1px solid var(--line); }
+  .uc-req-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 8px 0;
+    border-bottom: 1px solid var(--line2); font-size: 13px; }
+  .uc-req-row:last-child { border-bottom: none; }
+  .uc-req-row .slug { font-family: var(--mono); color: var(--text); }
+  .uc-sizebox { display: flex; gap: 30px; flex-wrap: wrap; }
+  .uc-sizebox .sz .lbl { font-size: 10.5px; letter-spacing: .06em; color: var(--dim); font-family: var(--mono); }
+  .uc-sizebox .sz .val { display: block; font-family: var(--mono); font-size: 18px; margin-top: 3px; }
+  .uc-sizebox .sz .val.unset { color: var(--dim); font-size: 13px; font-style: italic; font-family: var(--serif); }
+  .uc-who-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .uc-who-col h4 { font-size: 11px; color: var(--dim); font-family: var(--mono); letter-spacing: .05em; margin-bottom: 8px; }
+  @media (max-width: 700px) {
+    .uc-who-col { grid-template-columns: 1fr; gap: 18px; }
+    .uc-sizebox { gap: 20px; }
   }
 
   /* ---- mobile (D10): the 390pt layout was broken -- 72px dossier column,
@@ -663,6 +804,7 @@
   </div>
   <div class="tabs">
     <div class="tab active" data-view="changes">Changes</div>
+    <div class="tab" data-view="verticals">Verticals</div>
     <div class="tab" data-view="cockpit">Cockpit</div>
     <div class="tab" data-view="prospects">Pipeline</div>
     <div class="tab" data-view="entities">Library</div>
@@ -735,6 +877,7 @@
   <div class="view" id="view-patterns"></div>
 
   <div class="view active" id="view-changes"></div>
+  <div class="view" id="view-verticals"></div>
   <div class="view" id="view-usecase"></div>
   <div class="view" id="view-route404"></div>
 </main>
@@ -1101,6 +1244,13 @@ async function vfResolveApi(path) {
   if (u.pathname === "/api/changelog") return A.changelog || null;
   if (u.pathname === "/api/crew") return A.crew;
   if (u.pathname === "/api/ach") return A.ach;
+  // Verticals (2b): the parallel export lane derives these; may be empty
+  // or absent in a build that predates the promote. vfLoadVerticalsData()
+  // treats a missing/failing call the same as an empty array -- never a
+  // crash, never fabricated rows.
+  if (u.pathname === "/api/use_cases") return A.use_cases || [];
+  if (u.pathname === "/api/matrix_axes") return A.matrix_axes || null;
+  if (u.pathname === "/api/matrix_cells") return A.matrix_cells || [];
   if (u.pathname.startsWith("/api/entity/")) {
     const id = u.pathname.split("/").pop();
     const details = await vfEnsureDetails();
@@ -1142,7 +1292,7 @@ async function vfResolveApi(path) {
 // #/changes, plus tab routes. Filter tweaks use replaceState (no new
 // history entry); real navigation (tabs, dossiers, evidence) pushes a
 // hash change so back/forward move between actual places, not keystrokes. ----
-const VF_TAB_ROUTES = { changes: "changes", cockpit: "cockpit", prospects: "pipeline", entities: "library", questions: "questions", calendar: "calendar" };
+const VF_TAB_ROUTES = { changes: "changes", verticals: "verticals", cockpit: "cockpit", prospects: "pipeline", entities: "library", questions: "questions", calendar: "calendar" };
 const VF_TAB_ROUTES_REV = Object.fromEntries(Object.entries(VF_TAB_ROUTES).map(([k, v]) => [v, k]));
 
 function vfSetHash(pathWithQuery, replace) {
@@ -1174,10 +1324,6 @@ function activateGenericView(viewId, title, body) {
   $(viewId).innerHTML = vfTombstoneHtml(title, body);
 }
 
-function showUsecasePlaceholder(slug) {
-  activateGenericView("view-usecase", "Use case: " + (slug || "?"),
-    "Vertical use-case pages ship in a later wave. This URL is reserved so the link can be shared and revisited today.");
-}
 function showUnknownRoute(head) {
   activateGenericView("view-route404", "Nothing here",
     `"#/${head}" doesn't match a known page. Use the tabs above, or a link shared from this archive.`);
@@ -1211,6 +1357,7 @@ function activateTab(viewKey, opts) {
   state.view = viewKey;
   if (!opts.fromRoute) vfSetHash("/" + (VF_TAB_ROUTES[viewKey] || viewKey));
   if (viewKey === "changes") loadChanges();
+  if (viewKey === "verticals") loadVerticalsLanding();
   if (viewKey === "cockpit") loadCockpit();
   if (viewKey === "entities") setLibMode(libMode);
   if (viewKey === "questions") loadQuestions();
@@ -1250,7 +1397,10 @@ async function vfHandleHashChange() {
     return;
   }
   if (head === "evidence") { vfActivateEntitiesView("evidence"); routeEvidence(sub); return; }
-  if (head === "usecase") { showUsecasePlaceholder(sub || ""); return; }
+  if (head === "usecase") { loadUseCasePage(sub || ""); return; }
+  // #/vertical/<v> is the documented sitemap form; #/verticals/<v> is
+  // tolerated as an alias so either spelling of the deep link resolves.
+  if (head === "vertical" || (head === "verticals" && sub)) { loadVerticalMatrix(sub || ""); return; }
   const tabKey = VF_TAB_ROUTES_REV[head];
   if (tabKey) {
     activateTab(tabKey, { fromRoute: true });
@@ -1781,6 +1931,349 @@ function openPipelineVector(v, lane) {
   activateTab("prospects");
 }
 
+// ============================================================================
+// Verticals tab (2b): vector cards -> country x sector fit matrix -> the
+// use_case five-panel page. This is "Nord2000 on a use-case level, then
+// mapped to clients" -- the Pipeline tab above stays untouched as the
+// client view; this is the vertical/use-case view over the same edges.
+//
+// The `use_cases` / `matrix_axes` / `matrix_cells` keys are a parallel
+// export lane's work and may be EMPTY or ABSENT in the build this is
+// tested against. Every render path below degrades to an honest message
+// rather than crashing or fabricating a cell.
+// ============================================================================
+
+const KNOWN_VECTORS = ["noise", "flood", "solar", "radio", "wind", "3d-recon", "synthetic-data"];
+
+let vfVertPromise = null, vfVertData = null;
+async function vfLoadVerticalsData() {
+  if (vfVertData) return vfVertData;
+  if (!vfVertPromise) {
+    vfVertPromise = (async () => {
+      let useCases = [], axes = null, cells = [];
+      try { useCases = (await api("/api/use_cases")) || []; } catch (e) {}
+      try { axes = await api("/api/matrix_axes"); } catch (e) {}
+      try { cells = (await api("/api/matrix_cells")) || []; } catch (e) {}
+      const ucById = {};
+      useCases.forEach(u => { if (u && u.id != null) ucById[u.id] = u; });
+      vfVertData = { useCases, ucById, axes, cells };
+      return vfVertData;
+    })();
+    vfVertPromise.catch(() => { vfVertPromise = null; });
+  }
+  return vfVertPromise;
+}
+
+function vfActivateVerticalsView() {
+  document.querySelectorAll(".tab").forEach(x => x.classList.toggle("active", x.dataset.view === "verticals"));
+  document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "view-verticals"));
+  state.view = "verticals";
+}
+function vfActivateUsecaseView() {
+  // The use_case page is reached FROM Verticals (a matrix cell, a search
+  // result, a shared link) so the Verticals tab stays visually current,
+  // exactly like an entity dossier keeps the Library tab current.
+  document.querySelectorAll(".tab").forEach(x => x.classList.toggle("active", x.dataset.view === "verticals"));
+  document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "view-usecase"));
+  state.view = "usecase";
+}
+
+async function loadVerticalsLanding() {
+  vfSetHash("/verticals");
+  let matrix = [];
+  try { matrix = (await api("/api/cockpit")).matrix || []; } catch (e) {}
+  const byVec = {}; matrix.forEach(m => { byVec[m.vector] = m; });
+  const ceilClass = ceiling => !ceiling ? "none"
+    : (ceiling === "demonstrated-once" || ceiling === "hypothesized") ? "mid"
+    : (ceiling === "refuted-only" || ceiling === "refuted") ? "none" : "good";
+  const cards = KNOWN_VECTORS.map(v => {
+    const m = byVec[v] || {};
+    return `<div class="vertcard" data-vec="${esc(v)}">
+      <div class="vname">${esc(v)}</div>
+      <div class="vrow">
+        <span><b class="num">${m.entities || 0}</b> ${m.entities === 1 ? "entity" : "entities"}</span>
+        <span><b class="num">${m.evidence || 0}</b> claim${m.evidence === 1 ? "" : "s"}</span>
+        ${m.warm_hot ? `<span><b class="num">${m.warm_hot}</b> hot/warm prospect${m.warm_hot === 1 ? "" : "s"}</span>` : ""}
+      </div>
+      <div class="vrow"><span class="ceil ${ceilClass(m.ceiling)}">${esc(m.ceiling || "no capability data")}</span></div>
+      <div class="vfoot">use case &times; country &times; sector fit &rarr;</div>
+    </div>`;
+  }).join("");
+  $("view-verticals").innerHTML = `<div class="vert-grid">${cards}</div>`;
+  $("view-verticals").querySelectorAll(".vertcard[data-vec]").forEach(el =>
+    el.addEventListener("click", () => vfSetHash("/vertical/" + el.dataset.vec)));
+}
+
+// The ordinal method-lock scale (binding rule: lightness carries order, not
+// hue -- gold is reserved for the verification stamp). Level "q" covers BOTH
+// honest kinds of "we don't know": no matrix_cells row at all for this pair
+// (nobody has researched it) and, defensively, a row that arrives with
+// searched:false/null or an unrecognised method_lock. It is visually
+// distinct from level 1 ("-", searched and demonstrably not the method).
+const VF_LOCK_LEVEL = { "M": 4, "R": 3, "1of": 2, "-": 1 };
+const VF_LOCK_LABEL = { "M": "mandated", "R": "recommended", "1of": "one of several", "-": "researched — not the method here" };
+function vfCellGlyphInfo(cell) {
+  if (!cell || cell.searched === false || cell.searched == null) {
+    return { level: "q", glyph: "?", title: "not yet researched — nobody has looked at this pairing", n: 0, clickable: false };
+  }
+  const lock = cell.method_lock;
+  const n = cell.n || (Array.isArray(cell.use_case_ids) ? cell.use_case_ids.length : 0);
+  const clickable = n > 0 || (Array.isArray(cell.use_case_ids) && cell.use_case_ids.length > 0);
+  if (lock == null || !(lock in VF_LOCK_LEVEL)) {
+    return { level: "q", glyph: "?", title: "researched, but the method lock hasn't been classified yet", n, clickable };
+  }
+  return { level: VF_LOCK_LEVEL[lock], glyph: lock === "-" ? "–" : lock, title: VF_LOCK_LABEL[lock], n, clickable };
+}
+
+// Cells/use_cases don't necessarily carry a `vector` field in every build.
+// Filter strictly only if SOME cell in the whole set carries a vector
+// signal (either directly, or via a linked use_case's `vector`/`sim_domain`);
+// otherwise the build hasn't tagged cells by vertical yet, and hiding
+// everything would be a worse lie than showing it all with a note.
+function vfCellVector(c, ucById) {
+  if (c.vector) return c.vector;
+  const ids = Array.isArray(c.use_case_ids) ? c.use_case_ids : [];
+  for (const id of ids) {
+    const u = ucById[id];
+    if (u && (u.vector || u.sim_domain)) return u.vector || u.sim_domain;
+  }
+  return null;
+}
+
+async function loadVerticalMatrix(vector) {
+  vfActivateVerticalsView();
+  vfSetHash("/vertical/" + vector);
+  $("view-verticals").innerHTML = `<div class="empty">Loading…</div>`;
+  if (!KNOWN_VECTORS.includes(vector)) {
+    $("view-verticals").innerHTML = vfTombstoneHtml('Unknown vertical "' + vector + '"',
+      "Verticals tracked today: " + KNOWN_VECTORS.join(", ") + ".");
+    return;
+  }
+  let matrix = [];
+  try { matrix = (await api("/api/cockpit")).matrix || []; } catch (e) {}
+  const mrow = matrix.find(m => m.vector === vector) || {};
+  const { ucById, axes, cells } = await vfLoadVerticalsData();
+
+  const crumb = `<div class="mtx-crumb"><span class="back" id="mtxBack">&larr; all verticals</span>
+    <span class="vname">${esc(vector)}</span>
+    ${mrow.ceiling ? `<span class="ceil ${(mrow.ceiling === "demonstrated-once" || mrow.ceiling === "hypothesized") ? "mid" : "good"}">${esc(mrow.ceiling)}</span>` : ""}
+  </div>`;
+  const backWire = () => { const b = $("mtxBack"); if (b) b.addEventListener("click", () => vfSetHash("/verticals")); };
+
+  if (!cells.length) {
+    $("view-verticals").innerHTML = crumb + vfTombstoneHtml("No use cases in this build yet",
+      "The country × sector fit matrix for " + esc(vector) + " is still being derived and promoted (Nord2000 and the rest of the regulatory sweep). Nothing is fabricated here — this page resolves once use_case rows land.");
+    backWire();
+    return;
+  }
+
+  const tagged = cells.some(c => vfCellVector(c, ucById) != null);
+  const vecCells = tagged ? cells.filter(c => vfCellVector(c, ucById) === vector) : cells;
+  const untaggedNote = !tagged
+    ? `<div class="mtx-note">This build doesn't yet tag matrix cells by vertical — showing the full country × sector matrix across all use cases.</div>` : "";
+  if (tagged && !vecCells.length) {
+    $("view-verticals").innerHTML = crumb + vfTombstoneHtml("No use cases in this build yet for " + esc(vector),
+      "Nothing has been promoted for this vertical's matrix yet.");
+    backWire();
+    return;
+  }
+
+  const countries = (axes && Array.isArray(axes.countries) && axes.countries.length) ? axes.countries.slice()
+    : [...new Set(vecCells.map(c => c.country).filter(Boolean))].sort();
+  const sectors = (axes && Array.isArray(axes.sectors) && axes.sectors.length) ? axes.sectors.slice()
+    : [...new Set(vecCells.map(c => c.sector).filter(Boolean))].sort();
+  if (!countries.length || !sectors.length) {
+    $("view-verticals").innerHTML = crumb + vfTombstoneHtml("No matrix axes in this build yet",
+      "Country and sector axes for " + esc(vector) + " haven't been derived yet.");
+    backWire();
+    return;
+  }
+
+  const byKey = {};
+  vecCells.forEach(c => { byKey[c.country + "|" + c.sector] = c; });
+
+  const legendHtml = `<div class="mtx-legend">
+    <span class="lg-item"><span class="sw lvl-4">M</span> mandated</span>
+    <span class="lg-item"><span class="sw lvl-3">R</span> recommended</span>
+    <span class="lg-item"><span class="sw lvl-2">1of</span> one of several</span>
+    <span class="lg-item"><span class="sw lvl-1">&ndash;</span> researched — not the method here</span>
+    <span class="lg-item"><span class="sw lvl-q">?</span> not yet researched</span>
+  </div>`;
+
+  const colHeaders = sectors.map(se => `<th class="mtx-col">${esc(se)}</th>`).join("");
+  const rows = countries.map(co => {
+    const tds = sectors.map(se => {
+      const cell = byKey[co + "|" + se];
+      const info = vfCellGlyphInfo(cell);
+      const titleN = info.n ? ` · ${info.n} use case${info.n === 1 ? "" : "s"}` : "";
+      return `<td class="mtx-cell lvl-${info.level}${info.clickable ? " link" : ""}" data-co="${esc(co)}" data-se="${esc(se)}"
+        title="${esc(co)} · ${esc(se)} · ${esc(info.title)}${titleN}">
+        <span class="g">${esc(info.glyph)}</span>${info.n ? `<span class="n">${info.n}</span>` : ""}
+      </td>`;
+    }).join("");
+    return `<tr><th class="mtx-row" scope="row">${esc(co)}</th>${tds}</tr>`;
+  }).join("");
+
+  const tableHtml = `<div class="mtx-region" role="region" aria-labelledby="mtxCaption" tabindex="0">
+    <table class="mtx"><caption id="mtxCaption" style="position:absolute;left:-9999px">${esc(vector)} fit matrix, country by sector</caption>
+    <thead><tr><th class="mtx-corner">country / sector</th>${colHeaders}</tr></thead>
+    <tbody>${rows}</tbody></table>
+  </div>`;
+
+  const mobileHtml = `<div class="mtx-mobile">${countries.map(co => {
+    const rowsHtml = sectors.map(se => {
+      const cell = byKey[co + "|" + se];
+      const info = vfCellGlyphInfo(cell);
+      return `<div class="mc-row${info.clickable ? " link" : ""}" data-co="${esc(co)}" data-se="${esc(se)}">
+        <span class="sector">${esc(se)}</span>
+        <span class="badge2 lvl-${info.level}" title="${esc(info.title)}">${esc(info.glyph)}${info.n ? " (" + info.n + ")" : ""}</span>
+      </div>`;
+    }).join("");
+    return `<details class="mc-country"><summary>${esc(co)}<span class="mono" style="font-size:11px;color:var(--dim)">${sectors.length} sectors</span></summary>${rowsHtml}</details>`;
+  }).join("")}</div>`;
+
+  $("view-verticals").innerHTML = crumb + untaggedNote + legendHtml + tableHtml + mobileHtml;
+  backWire();
+
+  const handleCellClick = (co, se) => {
+    const cell = byKey[co + "|" + se];
+    if (!cell) return;
+    const ids = Array.isArray(cell.use_case_ids) ? cell.use_case_ids : [];
+    if (ids.length === 1) { const u = ucById[ids[0]]; location.hash = "/usecase/" + (u ? u.slug : ids[0]); return; }
+    if (ids.length > 1) {
+      const links = ids.map(id => ucById[id]).filter(Boolean);
+      vfOpenPanel(esc(co) + " · " + esc(se), links.length
+        ? links.map(u => `<div class="dlink" data-slug="${esc(u.slug)}" style="cursor:pointer"><span class="lab">${esc(u.name || u.slug)}</span></div>`).join("")
+        : `<div class="empty">${ids.length} use case(s) recorded here, but their ids didn't resolve in this build.</div>`);
+      return;
+    }
+    if (cell.n) vfOpenPanel(esc(co) + " · " + esc(se),
+      `<div class="empty">${cell.n} use case(s) recorded here, but this export doesn't resolve their ids yet.</div>`);
+  };
+  $("view-verticals").querySelectorAll(".mtx-cell.link, .mc-row.link").forEach(el =>
+    el.addEventListener("click", () => handleCellClick(el.dataset.co, el.dataset.se)));
+}
+document.addEventListener("click", e => {
+  const dl = e.target.closest("#vfPanel .dlink[data-slug]");
+  if (dl) { vfClosePanel(); location.hash = "/usecase/" + dl.dataset.slug; }
+});
+
+// Org chips for the "who performs / who buys" panel and the method-lock's
+// mandated-by/uses-method chips: each entry is either an object the export
+// resolved ({id, name, prospect_status, ...}) or, defensively, a bare
+// id/string, so this never breaks on a shape this build didn't ship yet.
+function ucOrgList(list) {
+  list = Array.isArray(list) ? list : [];
+  if (!list.length) return `<div class="empty" style="padding:12px 0">none recorded yet</div>`;
+  return `<div class="edgelist">${list.map(o => {
+    if (o && typeof o === "object") {
+      const id = o.id ?? o.entity_id ?? null;
+      const name = esc(o.name || o.entity_name || (id != null ? "#" + id : "(unnamed)"));
+      const status = o.prospect_status || o.status;
+      return `<div class="edgerow"${id != null ? ` data-id="${id}"` : ' style="cursor:default"'}>
+        <span class="tgt">${name}</span>
+        ${status ? `<span class="badge" style="color:var(--accent);border-color:var(--accent-dim)">${esc(status)}</span>` : ""}
+      </div>`;
+    }
+    return `<div class="edgerow" style="cursor:default"><span class="tgt">${esc(String(o))}</span></div>`;
+  }).join("")}</div>`;
+}
+function ucEvidenceRow(e) {
+  return `<div class="citation${e.invalid_at ? " invalid" : ""}${e.stakes === "high" ? " high" : ""}" style="cursor:pointer" data-evid="${e.id}">
+    <div class="claim">${esc(e.claim || "(no claim text)")}</div>
+    <div class="footline"><span>#${e.id}</span>${e.source_host ? `<span class="sep">·</span><span>${esc(e.source_host)}</span>` : ""}
+      ${e.votes_n ? `<span class="sep">·</span><span>${e.votes_n}&times; verified</span>` : ""}
+      ${e.invalid_at ? `<span class="sep">·</span><span style="color:var(--bad)">retracted</span>` : ""}</div>
+  </div>`;
+}
+
+// The Villads panel: attrs.requires slugs against the capability ceiling
+// for that regime, sourced from cockpit.matrix[].regimes[] -- the same
+// slug vocabulary `db.py benchmark` already joins on. Never fabricated: a
+// slug with no matching regime shows "not graded yet", not a guess.
+async function loadUseCasePage(slug) {
+  vfActivateUsecaseView();
+  $("view-usecase").innerHTML = `<div class="uc-wrap"><div class="empty">Loading…</div></div>`;
+  const { useCases, ucById } = await vfLoadVerticalsData();
+  if (!useCases.length) {
+    $("view-usecase").innerHTML = vfTombstoneHtml("No use cases in this build yet",
+      "Vertical use-case rows (Nord2000, DK aviation taxiing and the rest of the regulatory sweep) are still being derived and promoted. This link is reserved so it can be shared today and will resolve once they land.");
+    return;
+  }
+  const uc = useCases.find(u => u.slug === slug) || ucById[slug];
+  if (!uc) {
+    $("view-usecase").innerHTML = vfTombstoneHtml('No use case called "' + slug + '"',
+      "It may have been renamed or retired, or the link is stale.");
+    return;
+  }
+
+  let matrix = [];
+  try { matrix = (await api("/api/cockpit")).matrix || []; } catch (e) {}
+  const regimeCeilings = {};
+  matrix.forEach(m => (m.regimes || []).forEach(r => { regimeCeilings[r.slug] = r.ceiling; }));
+
+  const info = vfCellGlyphInfo({ method_lock: uc.method_lock, searched: true, n: uc.evidence_n || 0 });
+  const lockedBy = [].concat(uc.mandated_by || [], uc.recommended_by || []);
+  const usesMethod = Array.isArray(uc.uses_method) ? uc.uses_method : [];
+  const evidenceRows = (uc.evidence_refs_resolved || []).map(ucEvidenceRow).join("")
+    || `<div class="empty" style="padding:10px 0">no evidence linked to this method lock yet</div>`;
+
+  const reqRows = (Array.isArray(uc.requires) && uc.requires.length) ? uc.requires.map(rslug => {
+    const ceiling = regimeCeilings[rslug];
+    const cls = !ceiling ? "none" : ((ceiling === "demonstrated-once" || ceiling === "hypothesized") ? "mid" : (ceiling === "refuted" ? "none" : "good"));
+    return `<div class="uc-req-row"><span class="slug">${esc(rslug)}</span>
+      <span class="ceil ${cls}">${ceiling ? esc(ceiling) : "not graded yet"}</span></div>`;
+  }).join("") : `<div class="empty" style="padding:10px 0">no capability requirements captured yet</div>`;
+
+  const volTxt = (uc.volume_per_year != null)
+    ? `<span class="val num">${Number(uc.volume_per_year).toLocaleString()}/yr</span>`
+    : `<span class="val unset">not yet evidenced</span>`;
+  const priceTxt = (uc.price_anchor_dkk != null)
+    ? `<span class="val num">${fmtDkk(uc.price_anchor_dkk)}</span>`
+    : `<span class="val unset">not yet evidenced</span>`;
+
+  $("view-usecase").innerHTML = `<div class="uc-wrap">
+    <div class="uc-kicker">use case · ${esc(uc.country || "?")} · ${esc(uc.sector || "?")}${uc.market_type ? " · " + esc(uc.market_type) : ""}</div>
+    <div class="uc-h1">${esc(uc.name || uc.slug)}</div>
+    ${uc.summary ? `<div class="uc-sub">${esc(uc.summary)}</div>` : ""}
+    <div class="mlabel">${esc(uc.slug)} · ${uc.evidence_n || 0} claim${uc.evidence_n === 1 ? "" : "s"}</div>
+
+    <div class="uc-panel">
+      <h3>The method lock</h3>
+      <span class="uc-lockbadge lvl-${info.level}">${esc(info.glyph)} ${esc(info.title)}</span>
+      ${lockedBy.length ? `<div style="margin-top:10px">${ucOrgList(lockedBy)}</div>` : ""}
+      ${usesMethod.length ? `<div class="det" style="margin-top:8px;font-size:12px;color:var(--muted)">standard: ${usesMethod.map(m => esc(m && m.name ? m.name : String(m))).join(", ")}</div>` : ""}
+      <div style="margin-top:10px">${evidenceRows}</div>
+    </div>
+
+    <div class="uc-panel">
+      <h3>What it requires of us</h3>
+      <div class="det" style="font-size:12px;color:var(--muted);margin-bottom:8px">Parameters from <span class="mlabel" style="display:inline">engine/parameters.yaml</span> against our capability ceiling for that regime.</div>
+      ${reqRows}
+    </div>
+
+    <div class="uc-panel">
+      <h3>Size and fit</h3>
+      <div class="uc-sizebox">
+        <div class="sz"><div class="lbl">volume / year</div>${volTxt}</div>
+        <div class="sz"><div class="lbl">price anchor</div>${priceTxt}</div>
+      </div>
+    </div>
+
+    <div class="uc-panel">
+      <h3>Who performs and who buys it</h3>
+      <div class="uc-who-col">
+        <div><h4>performs</h4>${ucOrgList(uc.performed_by)}</div>
+        <div><h4>buys</h4>${ucOrgList(uc.bought_by)}</div>
+      </div>
+    </div>
+  </div>`;
+
+  $("view-usecase").querySelectorAll(".edgerow[data-id]").forEach(el =>
+    el.addEventListener("click", () => goToEntity(parseInt(el.dataset.id))));
+  $("view-usecase").querySelectorAll(".citation[data-evid]").forEach(el =>
+    el.addEventListener("click", () => { location.hash = "/evidence/" + el.dataset.evid; }));
+}
 
 let calMonth = null;  // Date anchored to the 1st of the displayed month
 let calData = null;
@@ -1975,27 +2468,52 @@ async function loadQuestions() {
 // build yet" message when it's absent, rather than erroring or faking data.
 const VF_LAST_VISIT_KEY = "vf_last_visit";
 const VF_LAST_VISIT_PREV_KEY = "vf_last_visit_prev";
+// Reader-facing table labels for the raw `tbl` column, and the four-verb
+// vocabulary the exporter's own verb_map already normalizes onto (added /
+// revised / superseded / retracted) -- this fallback only fires for a verb
+// string this build's verb_map doesn't cover.
+const VF_TBL_LABEL = { evidence: "evidence claim", entities: "organization record", edges: "relationship",
+  milestones: "deadline", prospects: "prospect assessment", decisions: "decision", plays: "play" };
 const VF_CHANGE_VERB_MAP = {
   add: "added", added: "added", create: "added", created: "added", new: "added",
   revise: "revised", revised: "revised", update: "revised", updated: "revised", edit: "revised", edited: "revised",
   supersede: "superseded", superseded: "superseded", replace: "superseded", replaced: "superseded", merge: "superseded", merged: "superseded",
   retract: "retracted", retracted: "retracted", invalidate: "retracted", invalidated: "retracted", delete: "retracted", deleted: "retracted",
 };
-// Field names are not yet settled by the exporter lane, so this reads
-// several plausible shapes rather than assuming one.
+// Entries as sentences, not "field_x updated": length is proportional to
+// significance -- a revision names the fields that moved, a retraction
+// carries its note (never silent).
+function vfChangeSentence(raw, verb) {
+  const tblLabel = VF_TBL_LABEL[raw.tbl] || raw.tbl || "record";
+  const PHRASE = { added: `A new ${tblLabel} was added`, revised: `This ${tblLabel} was revised`,
+    superseded: `This ${tblLabel} was superseded`, retracted: `This ${tblLabel} was retracted` };
+  let s = (PHRASE[verb] || `This ${tblLabel} changed`) + ".";
+  const fc = Array.isArray(raw.fields_changed) ? raw.fields_changed.filter(f => f !== "entity") : [];
+  if (verb === "revised" && fc.length) s += ` Fields updated: ${fc.slice(0, 6).join(", ")}${fc.length > 6 ? "…" : ""}.`;
+  if (raw.note) s += ` ${raw.note}`;
+  return s;
+}
+// The exporter's row shape (subject to change as the parallel lane
+// iterates): { verb, ts, subject, tbl, row_id, note, fields_changed, ... }.
+// This reads several plausible field-name variants defensively rather than
+// assuming exactly that shape holds forever.
 function vfNormalizeChangeEntry(raw) {
   raw = raw || {};
   const verbRaw = String(raw.verb || raw.action || raw.kind || raw.type || "").toLowerCase();
-  const verb = VF_CHANGE_VERB_MAP[verbRaw] || (raw.invalid_at ? "retracted" : "revised");
-  const at = raw.at || raw.date || raw.ts || raw.timestamp || raw.created_at || raw.changed_at || raw.retrieved_at || "";
+  const verb = ["added", "revised", "superseded", "retracted"].includes(verbRaw) ? verbRaw
+    : (VF_CHANGE_VERB_MAP[verbRaw] || (raw.invalid_at ? "retracted" : "revised"));
+  const at = raw.ts || raw.at || raw.date || raw.timestamp || raw.created_at || raw.changed_at || raw.retrieved_at || "";
   const subject = raw.subject || raw.subject_name || raw.entity_name || raw.name || raw.label || "";
-  const summary = raw.summary || raw.sentence || raw.detail || raw.description || raw.text ||
-    (subject ? `${subject} was ${verb}.` : "A record changed.");
-  return {
-    verb, at, subject, summary,
-    entityId: raw.entity_id ?? raw.entityId ?? null,
-    evId: raw.evidence_id ?? raw.evidenceId ?? null,
-  };
+  const summary = raw.summary || raw.sentence || raw.detail || raw.description || raw.text || vfChangeSentence(raw, verb);
+  const tbl = raw.tbl || raw.table || "";
+  const rowId = raw.row_id ?? raw.rowId ?? null;
+  let entityId = raw.entity_id ?? raw.entityId ?? null;
+  let evId = raw.evidence_id ?? raw.evidenceId ?? null;
+  if (rowId != null && entityId == null && evId == null) {
+    if (tbl === "evidence") evId = rowId;
+    else if (tbl === "entities") entityId = rowId;
+  }
+  return { verb, at, subject, summary, entityId, evId };
 }
 
 async function loadChanges() {
@@ -2010,9 +2528,15 @@ async function loadChanges() {
       `<span>${a.urgency ? `<span class="urg urg-${a.urgency}">${"!".repeat(a.urgency)}</span> ` : ""}${esc(a.label)}</span>`).join("")}</div>`;
   } catch (e) { /* cockpit not reachable yet -- the strip is a nicety, not a blocker */ }
 
-  let raw = null;
-  try { raw = await api("/api/changelog"); } catch (e) { raw = null; }
-  if (!raw || !Array.isArray(raw) || !raw.length) {
+  // The exporter ships either a bare array or { rows, rows_truncated,
+  // by_day, ... } (its actual current shape); both are accepted so a
+  // future reshape on that lane doesn't break this tab outright.
+  let payload = null;
+  try { payload = await api("/api/changelog"); } catch (e) { payload = null; }
+  const rawRows = Array.isArray(payload) ? payload : (payload && Array.isArray(payload.rows) ? payload.rows : null);
+  const truncatedNote = (payload && payload.rows_truncated)
+    ? `<div class="mlabel" style="margin:-8px 0 14px">showing the most recent ${rawRows.length} changes${payload.window_days ? ` (last ${payload.window_days} days)` : ""}</div>` : "";
+  if (!rawRows) {
     $("view-changes").innerHTML = `<div class="chg-wrap">
       ${actNowHtml}
       <div class="empty" style="text-align:left;padding:40px 0">
@@ -2023,7 +2547,7 @@ async function loadChanges() {
     return;
   }
 
-  const entries = raw.map(vfNormalizeChangeEntry).sort((a, b) => (b.at || "").localeCompare(a.at || ""));
+  const entries = rawRows.map(vfNormalizeChangeEntry).sort((a, b) => (b.at || "").localeCompare(a.at || ""));
   const savedVisit = localStorage.getItem(VF_LAST_VISIT_KEY);
   const boundary = sinceOverride || savedVisit || "1970-01-01T00:00:00Z";
   const hasSavedVisit = !!(sinceOverride || savedVisit);
@@ -2039,13 +2563,54 @@ async function loadChanges() {
     ${(e.entityId != null || e.evId != null) ? `<a href="#/${e.entityId != null ? "entity/" + e.entityId : "evidence/" + e.evId}" class="chg-link">open →</a>` : ""}
   </div>`;
 
+  // Length proportional to significance (Linear's rule, and Keep a
+  // Changelog's warning that a commit-log dump is noise): a retraction or a
+  // revision gets its own sentence, but 334 rows each reading "a new evidence
+  // claim was added" is a commit log, not a digest. Bulk additions collapse
+  // into one line per subject with a count, biggest first, so the reader sees
+  // WHERE the base grew rather than scrolling 334 identical sentences.
+  const rollupHtml = items => {
+    const bySubject = new Map();
+    items.forEach(e => {
+      const k = e.subject || "(unattributed)";
+      const cur = bySubject.get(k) || { n: 0, entityId: null, evId: null };
+      cur.n++;
+      if (cur.entityId == null && e.entityId != null) cur.entityId = e.entityId;
+      if (cur.evId == null && e.evId != null) cur.evId = e.evId;
+      bySubject.set(k, cur);
+    });
+    const rows = [...bySubject.entries()].sort((a, b) => b[1].n - a[1].n);
+    const SHOW = 14;
+    const head = rows.slice(0, SHOW).map(([subj, m]) => {
+      const href = m.entityId != null ? `#/entity/${m.entityId}` : (m.evId != null ? `#/evidence/${m.evId}` : "");
+      const label = href ? `<a href="${href}">${esc(subj)}</a>` : esc(subj);
+      return `<li>${label} <span class="mono chg-n">${m.n}</span></li>`;
+    }).join("");
+    const restN = rows.slice(SHOW).reduce((a, r) => a + r[1].n, 0);
+    const rest = rows.length > SHOW
+      ? `<li class="chg-rest">and ${restN} more across ${rows.length - SHOW} other source${rows.length - SHOW === 1 ? "" : "s"}</li>` : "";
+    return `<ul class="chg-rollup">${head}${rest}</ul>`;
+  };
+
   const groupHtml = (key, title) => {
     const items = byVerb[key] || [];
     if (!items.length) return "";
-    return `<div class="chg-group"><h3>${title} <span class="n">${items.length}</span></h3>${items.map(entryHtml).join("")}</div>`;
+    // Individually list anything that carries its own note or named field
+    // changes -- those are real editorial events. Roll up the rest.
+    const notable = items.filter(e => e.verb !== "added");
+    const bulk = items.filter(e => e.verb === "added");
+    const ROLLUP_AT = 12;
+    const body = (bulk.length > ROLLUP_AT)
+      ? rollupHtml(bulk) + notable.map(entryHtml).join("")
+      : items.map(entryHtml).join("");
+    const sub = (bulk.length > ROLLUP_AT)
+      ? `<div class="chg-sub">grouped by source — ${bulk.length} claims</div>` : "";
+    return `<div class="chg-group"><h3>${title} <span class="n">${items.length}</span></h3>${sub}${body}</div>`;
   };
 
-  const dateVal = boundary.slice(0, 10);
+  // An epoch date in the picker reads as a bug; leave it empty until a real
+  // visit is recorded, and let the prose below explain the first-run state.
+  const dateVal = hasSavedVisit ? boundary.slice(0, 10) : "";
   const shareHash = "#/changes?since=" + encodeURIComponent(boundary);
 
   $("view-changes").innerHTML = `<div class="chg-wrap">
@@ -2057,6 +2622,7 @@ async function loadChanges() {
       ${localStorage.getItem(VF_LAST_VISIT_PREV_KEY) !== null ? `<button id="chgUndo" class="chg-btn ghost">undo</button>` : ""}
       <a href="${shareHash}" class="chg-share" title="share this exact boundary">share this view</a>
     </div>
+    ${truncatedNote}
     ${!hasSavedVisit
       ? `<div class="empty" style="text-align:left;padding:6px 0 20px"><div style="font-family:var(--serif);font-size:13.5px;color:var(--muted)">No visit recorded yet on this device — showing every entry. Press "mark all seen" once you're caught up.</div></div>`
       : newCount
@@ -2339,6 +2905,134 @@ function vfReflectSearchInHash() {
   vfSetHash(base + qs, true);
 }
 
+// ---- global search (2d): the box worked on 2 of 6 surfaces before ("does
+// nothing" on Cockpit/Pipeline/Changes/Calendar, no feedback). It now
+// always shows a ranked, grouped results dropdown that jumps anywhere,
+// while Library keeps its own live list-filtering on top of that.
+//
+// Vendoring: MiniSearch (~6KB gzip) was the brief's suggestion, but a small
+// hand-rolled inverted index with BM25-ish scoring was simpler to keep
+// verifiably correct in this single file and is plenty fast over ~1,600
+// rows -- that's what's implemented below, not MiniSearch.
+let VF_SEARCH_INDEX = null, VF_SEARCH_BUILDING = null;
+
+function vfTokenize(s) { return String(s || "").toLowerCase().match(/[a-z0-9æøå]+/g) || []; }
+
+async function vfBuildSearchIndex() {
+  if (VF_SEARCH_INDEX) return VF_SEARCH_INDEX;
+  if (VF_SEARCH_BUILDING) return VF_SEARCH_BUILDING;
+  VF_SEARCH_BUILDING = (async () => {
+    const docs = [];
+    try {
+      const ents = await api("/api/entities?" + new URLSearchParams({ search: "", type: "", status: "", country: "", vector: "" }));
+      ents.forEach(e => docs.push({ type: "entity", id: e.id, title: e.name,
+        body: [e.summary, e.aliases_text, e.type, e.country].filter(Boolean).join(" ") }));
+    } catch (e) {}
+    try {
+      const ev = await api("/api/evidence?" + new URLSearchParams({ search: "", golden_ref: "", stakes: "", valid_only: "0", country: "", vector: "" }));
+      ev.forEach(row => docs.push({ type: "evidence", id: row.id, title: row.claim,
+        body: [row.quote, row.entity_name].filter(Boolean).join(" ") }));
+    } catch (e) {}
+    try {
+      const pr = await api("/api/prospects?" + new URLSearchParams({ country: "", status: "" }));
+      pr.forEach(p => docs.push({ type: "prospect", id: p.entity_id, title: p.name,
+        body: [p.angle, p.timing].filter(Boolean).join(" ") }));
+    } catch (e) {}
+    try {
+      const cl = await api("/api/changelog");
+      if (Array.isArray(cl)) cl.map(vfNormalizeChangeEntry).forEach((c, i) => docs.push({
+        type: "changelog", id: i, title: c.subject || c.verb, body: [c.summary, c.verb].filter(Boolean).join(" "),
+        entityId: c.entityId, evId: c.evId }));
+    } catch (e) {}
+
+    const postings = new Map(); // term -> Map(docIdx -> termFrequency)
+    const lens = [];
+    docs.forEach((d, i) => {
+      const terms = vfTokenize((d.title || "") + " " + (d.body || ""));
+      lens.push(terms.length || 1);
+      const tf = new Map();
+      terms.forEach(t => tf.set(t, (tf.get(t) || 0) + 1));
+      tf.forEach((n, t) => { if (!postings.has(t)) postings.set(t, new Map()); postings.get(t).set(i, n); });
+    });
+    const avgLen = lens.reduce((a, b) => a + b, 0) / Math.max(1, lens.length);
+    VF_SEARCH_INDEX = { docs, postings, lens, avgLen, terms: [...postings.keys()].sort() };
+    return VF_SEARCH_INDEX;
+  })();
+  return VF_SEARCH_BUILDING;
+}
+
+// A query token matches its own term plus any indexed term it prefixes
+// (prefix matching); scored with BM25 (k1=1.4, b=0.75), prefix-only hits
+// discounted slightly against exact-term hits.
+function vfExpandTerm(idx, tok) {
+  const hit = idx.postings.has(tok) ? [tok] : [];
+  return hit.concat(idx.terms.filter(t => t !== tok && t.startsWith(tok)));
+}
+function vfSearchAll(query, limit) {
+  const idx = VF_SEARCH_INDEX;
+  if (!idx) return [];
+  const qTerms = vfTokenize(query);
+  if (!qTerms.length) return [];
+  const N = idx.docs.length, k1 = 1.4, b = 0.75;
+  const scores = new Map();
+  qTerms.forEach(qt => {
+    vfExpandTerm(idx, qt).forEach(term => {
+      const post = idx.postings.get(term);
+      if (!post) return;
+      const df = post.size;
+      const idf = Math.log(1 + (N - df + 0.5) / (df + 0.5));
+      const exactBoost = term === qt ? 1 : 0.6;
+      post.forEach((tf, docIdx) => {
+        const len = idx.lens[docIdx];
+        const denom = tf + k1 * (1 - b + b * len / idx.avgLen);
+        scores.set(docIdx, (scores.get(docIdx) || 0) + idf * ((tf * (k1 + 1)) / denom) * exactBoost);
+      });
+    });
+  });
+  return [...scores.entries()].sort((a, x) => x[1] - a[1]).slice(0, limit || 40)
+    .map(([docIdx, score]) => ({ ...idx.docs[docIdx], score }));
+}
+
+const VF_SD_TITLES = { entity: "Organizations", evidence: "Claims & quotes", prospect: "Prospects", changelog: "Changes" };
+function vfRenderSearchDrop(query) {
+  const drop = $("searchDrop");
+  if (!drop) return;
+  if (!query) { drop.classList.remove("open"); drop.innerHTML = ""; return; }
+  if (!VF_SEARCH_INDEX) { drop.innerHTML = `<div class="sd-empty">Indexing…</div>`; drop.classList.add("open"); return; }
+  const results = vfSearchAll(query, 60);
+  if (!results.length) { drop.innerHTML = `<div class="sd-empty">No matches for "${esc(query)}".</div>`; drop.classList.add("open"); return; }
+  const groups = { entity: [], evidence: [], prospect: [], changelog: [] };
+  results.forEach(r => (groups[r.type] || (groups[r.type] = [])).push(r));
+  let html = "";
+  Object.entries(groups).forEach(([type, items]) => {
+    if (!items.length) return;
+    html += `<div class="sd-group"><div class="sd-h">${esc(VF_SD_TITLES[type] || type)} · ${items.length}</div>` +
+      items.slice(0, 6).map(r => `<div class="sd-row" data-type="${r.type}" data-id="${r.id}" data-entid="${r.entityId ?? ""}" data-evid="${r.evId ?? ""}">
+        <div class="sd-t">${esc(r.title || "(untitled)")}</div>
+        ${r.body ? `<div class="sd-s">${esc(r.body.slice(0, 140))}</div>` : ""}
+      </div>`).join("") + `</div>`;
+  });
+  drop.innerHTML = html + `<div class="sd-foot">${results.length} match${results.length === 1 ? "" : "es"} across entities, claims, prospects and changes</div>`;
+  drop.classList.add("open");
+}
+function vfGoToSearchResult(row) {
+  vfClosePanel();
+  $("searchDrop").classList.remove("open");
+  const type = row.dataset.type;
+  if (type === "entity" || type === "prospect") location.hash = "/entity/" + row.dataset.id;
+  else if (type === "evidence") location.hash = "/evidence/" + row.dataset.id;
+  else if (type === "changelog") {
+    if (row.dataset.entid) location.hash = "/entity/" + row.dataset.entid;
+    else if (row.dataset.evid) location.hash = "/evidence/" + row.dataset.evid;
+    else location.hash = "/changes";
+  }
+}
+document.addEventListener("click", e => {
+  const row = e.target.closest("#searchDrop .sd-row");
+  if (row) { vfGoToSearchResult(row); return; }
+  if (!e.target.closest(".searchbar")) { const d = $("searchDrop"); if (d) d.classList.remove("open"); }
+});
+
 let searchTimer;
 $("search").addEventListener("input", e => {
   clearTimeout(searchTimer);
@@ -2346,9 +3040,12 @@ $("search").addEventListener("input", e => {
     state.search = e.target.value.trim();
     if (state.view === "entities") loadEntities();
     else if (state.view === "evidence") loadEvidence();
+    if (state.search) vfBuildSearchIndex().then(() => vfRenderSearchDrop(state.search));
+    else vfRenderSearchDrop("");
     vfReflectSearchInHash();
   }, 220);
 });
+$("search").addEventListener("focus", () => { if (state.search) vfRenderSearchDrop(state.search); });
 ["evQuestion", "evStakes", "evValidOnly", "evCountry", "evVector"].forEach(id =>
   $(id).addEventListener("change", loadEvidence));
 ["prCountry", "prStatus"].forEach(id => $(id).addEventListener("change", loadProspects));
@@ -2364,7 +3061,7 @@ document.addEventListener("keydown", e => {
     if (state.selectedEntity) { state.selectedEntity = null; $("detail").style.display = "none"; $("detailEmpty").style.display = "flex"; $("view-entities").classList.remove("show-detail"); }
     return;
   }
-  if (!typing && e.key >= "1" && e.key <= "6") {
+  if (!typing && e.key >= "1" && e.key <= "7") {
     const tabs = [...document.querySelectorAll(".tab")];
     const t = tabs[parseInt(e.key) - 1];
     if (t) t.click();
