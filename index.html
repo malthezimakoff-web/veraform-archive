@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<script>window.VF = {"buildTs": "2026-08-17T15:39:33.363606+00:00", "core": "data-9357f36d.enc", "coreDigest": "9357f36db0a3d8f8efe4f0ad670c1ca01f065dd7d708aba45ecdee061a8581b7", "details": "details-ffa7c69a.enc", "detailsDigest": "ffa7c69a186bb5e4ab57afabf7d182a25a114f26fe92913027bd2e2b19bac296", "keyFp": "84c0fcd1", "schema": 2};</script>
+<script>window.VF = {"buildTs": "2026-08-17T15:40:38.595453+00:00", "core": "data-5a37fd18.enc", "coreDigest": "5a37fd18f99ed099f4c1e76dc98e011a229a6c82e864633ada5436d680ba71b7", "details": "details-9a7b0945.enc", "detailsDigest": "9a7b0945512a7a35f9e7251d56bf32a05cdae093e0e4368cb48cd5f04527adb7", "keyFp": "84c0fcd1", "schema": 2};</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Veraform research archive</title>
@@ -565,6 +565,33 @@
   .patrow .bar i { display: block; height: 100%; background: var(--accent); }
   .patrow .v { font-family: var(--mono); font-size: 11.5px; color: var(--muted); min-width: 110px; text-align: right; }
   .vchip { display: inline-block; font-family: var(--mono); font-size: 10px; padding: 1px 6px; border-radius: 3px; background: var(--panel2); color: var(--accent-dim); border: 1px solid var(--line); margin-right: 3px; }
+
+  /* ---- Changes tab (2a) ---- */
+  #view-changes { padding: 22px 28px 60px; overflow-y: auto; }
+  .chg-wrap { max-width: 820px; }
+  .chg-boundary { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 14px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 6px; margin: 14px 0 18px; }
+  .chg-boundary input[type="date"] { background: var(--panel2); border: 1px solid var(--line); color: var(--text);
+    border-radius: 4px; padding: 6px 8px; font: 12.5px var(--mono); min-height: 32px; }
+  .chg-btn { font-family: var(--mono); font-size: 11.5px; background: var(--panel2); border: 1px solid var(--line);
+    border-radius: 4px; color: var(--text); padding: 6px 12px; cursor: pointer; min-height: 32px; }
+  .chg-btn:hover { border-color: var(--accent-dim); color: var(--accent); }
+  .chg-btn.ghost { color: var(--muted); }
+  .chg-share { margin-left: auto; font-family: var(--mono); font-size: 11.5px; color: var(--accent-dim); text-decoration: none; }
+  .chg-share:hover { text-decoration: underline; }
+  .chg-banner { text-align: left; padding: 10px 0 18px; font-family: var(--mono); font-size: 12px; color: var(--dim); letter-spacing: .04em; }
+  .chg-group { margin-bottom: 22px; }
+  .chg-group h3 { font-family: var(--serif); font-size: 15px; font-weight: 650; margin-bottom: 8px;
+    padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+  .chg-group h3 .n { font-family: var(--mono); font-size: 11px; color: var(--dim); margin-left: 6px; }
+  .chg-entry { padding: 10px 0; border-bottom: 1px solid var(--line2); }
+  .chg-entry:last-child { border-bottom: none; }
+  .chg-entry.chg-retracted .chg-sentence { color: var(--bad); }
+  .chg-meta { font-size: 11px; color: var(--dim); margin-bottom: 3px; }
+  .chg-meta b { color: var(--muted); font-weight: 600; }
+  .chg-sentence { font-family: var(--serif); font-size: 14.5px; line-height: 1.55; color: var(--text); max-width: 66ch; }
+  .chg-link { font-family: var(--mono); font-size: 11px; color: var(--accent-dim); text-decoration: none; margin-top: 4px; display: inline-block; }
+  .chg-link:hover { text-decoration: underline; }
 
   /* ---- table craft: hairline rules, no zebra, tabular numerals, numbers
      right-aligned / text left-aligned, header alignment follows its data ---- */
