@@ -1,34 +1,66 @@
 <!doctype html>
 <html lang="en">
 <head>
-<script>window.VF = {"buildTs": "2026-08-17T15:10:02.152780+00:00", "core": "data-9f5124c0.enc", "coreDigest": "9f5124c075728045aea1cf9c4e3d8081274549df4bb46bf2065c270933d1d8a6", "details": "details-51db3b7c.enc", "detailsDigest": "51db3b7cf0b997fca96e592961982fd1aa84b26aadcab46039520ba8eedfc362", "keyFp": "84c0fcd1", "schema": 2};</script>
+<script>window.VF = {"buildTs": "2026-08-17T15:39:33.363606+00:00", "core": "data-9357f36d.enc", "coreDigest": "9357f36db0a3d8f8efe4f0ad670c1ca01f065dd7d708aba45ecdee061a8581b7", "details": "details-ffa7c69a.enc", "detailsDigest": "ffa7c69a186bb5e4ab57afabf7d182a25a114f26fe92913027bd2e2b19bac296", "keyFp": "84c0fcd1", "schema": 2};</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Veraform research archive</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='2' y='2' width='12' height='12' rx='1' fill='%23c9a24b'/%3E%3C/svg%3E">
 <style>
+  /* ---- Direction C, "Records office" -- 12-step warm-neutral scale + a
+     small gold accent scale (Radix-style step contract: 1-2 backgrounds,
+     3-5 component surfaces, 6-8 borders, 9-10 solid, 11-12 text). Legacy
+     --bg/--panel/... names are kept and simply point at these steps, so the
+     rest of the stylesheet (which predates this contract) needs no rewrite.
+     GOLD IS DEMOTED: only --gold-solid/--gold-wash exist, and they are used
+     in exactly one place in the whole file -- the verification stamp's
+     "has a record" state. Everywhere else is grey. */
   :root {
-    --bg: #14120f; --panel: #1c1915; --panel2: #100e0b; --line: #2e2a22; --line2: #241f18;
-    --text: #e8e1d3; --muted: #a89c85; --dim: #6b5f4c;
-    --accent: #c9a24b; --accent-dim: #8a7038;
-    --ok: #5fae72; --bad: #d16a5a; --warn: #c9a24b;
+    /* light palette (bare :root = the default) */
+    --n1: #faf8f4; --n2: #f5f1e8; --n3: #efe9db; --n4: #e9e1cf; --n5: #e2d8c2;
+    --n6: #d8cbaf; --n7: #c9b994; --n8: #b7a47c; --n9: #8c7a55; --n10: #75664a;
+    --n11: #5b4f3a; --n12: #1a1a1a;
+    --gold-solid: #7a5c14; --gold-dim: #97721f; --gold-wash: rgba(122, 92, 20, .08);
+    --ok: #2f7a45; --bad: #a83f2a; --warn: #96731f;
+
+    --bg: var(--n1); --panel: var(--n2); --panel2: var(--n3); --line: var(--n6); --line2: var(--n5);
+    --text: var(--n12); --muted: var(--n11); --dim: var(--n9);
+    --accent: var(--gold-solid); --accent-dim: var(--gold-dim);
     --serif: ui-serif, Georgia, "Times New Roman", serif;
     --sans: -apple-system, "Segoe UI", system-ui, sans-serif;
     --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
   }
-  :root[data-theme="light"] {
-    --bg: #f6f1e6; --panel: #fffdf8; --panel2: #ede6d4; --line: #ddd2b6; --line2: #e6dcc3;
-    --text: #241f18; --muted: #6b5f4c; --dim: #948763;
-    --accent: #96731f; --accent-dim: #c9a24b;
-    --ok: #2f7a45; --bad: #a83f2a; --warn: #96731f;
-  }
-  @media (prefers-color-scheme: light) {
-    :root:not([data-theme="dark"]) {
-      --bg: #f6f1e6; --panel: #fffdf8; --panel2: #ede6d4; --line: #ddd2b6; --line2: #e6dcc3;
-      --text: #241f18; --muted: #6b5f4c; --dim: #948763;
-      --accent: #96731f; --accent-dim: #c9a24b;
-      --ok: #2f7a45; --bad: #a83f2a; --warn: #96731f;
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --n1: #1a1a1a; --n2: #211f1a; --n3: #272420; --n4: #2e2a22; --n5: #362f24;
+      --n6: #453c2c; --n7: #574b34; --n8: #6b5f4c; --n9: #8a7d63; --n10: #a89c85;
+      --n11: #c7bda3; --n12: #f2ede2;
+      --gold-solid: #c9a24b; --gold-dim: #8a7038; --gold-wash: rgba(201, 162, 75, .10);
+      --ok: #5fae72; --bad: #d16a5a; --warn: #c9a24b;
+      --bg: var(--n1); --panel: var(--n2); --panel2: var(--n3); --line: var(--n6); --line2: var(--n5);
+      --text: var(--n12); --muted: var(--n11); --dim: var(--n9);
+      --accent: var(--gold-solid); --accent-dim: var(--gold-dim);
     }
+  }
+  :root[data-theme="dark"] {
+    --n1: #1a1a1a; --n2: #211f1a; --n3: #272420; --n4: #2e2a22; --n5: #362f24;
+    --n6: #453c2c; --n7: #574b34; --n8: #6b5f4c; --n9: #8a7d63; --n10: #a89c85;
+    --n11: #c7bda3; --n12: #f2ede2;
+    --gold-solid: #c9a24b; --gold-dim: #8a7038; --gold-wash: rgba(201, 162, 75, .10);
+    --ok: #5fae72; --bad: #d16a5a; --warn: #c9a24b;
+    --bg: var(--n1); --panel: var(--n2); --panel2: var(--n3); --line: var(--n6); --line2: var(--n5);
+    --text: var(--n12); --muted: var(--n11); --dim: var(--n9);
+    --accent: var(--gold-solid); --accent-dim: var(--gold-dim);
+  }
+  :root[data-theme="light"] {
+    --n1: #faf8f4; --n2: #f5f1e8; --n3: #efe9db; --n4: #e9e1cf; --n5: #e2d8c2;
+    --n6: #d8cbaf; --n7: #c9b994; --n8: #b7a47c; --n9: #8c7a55; --n10: #75664a;
+    --n11: #5b4f3a; --n12: #1a1a1a;
+    --gold-solid: #7a5c14; --gold-dim: #97721f; --gold-wash: rgba(122, 92, 20, .08);
+    --ok: #2f7a45; --bad: #a83f2a; --warn: #96731f;
+    --bg: var(--n1); --panel: var(--n2); --panel2: var(--n3); --line: var(--n6); --line2: var(--n5);
+    --text: var(--n12); --muted: var(--n11); --dim: var(--n9);
+    --accent: var(--gold-solid); --accent-dim: var(--gold-dim);
   }
   * { box-sizing: border-box; margin: 0; }
   html, body { height: 100%; }
@@ -36,6 +68,10 @@
     background: var(--bg); color: var(--text); font: 15px/1.5 var(--sans);
     display: flex; flex-direction: column;
   }
+  /* Records-office reading measure: body copy ~17px, capped near 66ch,
+     line-height ~1.5, sentence case everywhere -- no all-caps blocks. */
+  .prose17 { font-size: 17px; line-height: 1.55; max-width: 66ch; }
+  .mlabel { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; color: var(--dim); }
   .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
   ::selection { background: var(--accent); color: var(--panel2); }
 
@@ -57,6 +93,99 @@
   }
   .searchbar input:focus { outline: none; border-color: var(--accent-dim); }
   .searchbar svg { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); opacity: .5; }
+  /* ---- global search dropdown (2d): the box now works on every surface,
+     not just Library -- typing shows a ranked, grouped results panel that
+     jumps anywhere, while Library keeps its own live list-filtering too. ---- */
+  .searchdrop {
+    display: none; position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+    max-height: 60vh; overflow-y: auto; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 7px; box-shadow: 0 8px 24px rgba(0,0,0,.18); z-index: 60; padding: 6px;
+  }
+  .searchdrop.open { display: block; }
+  .searchdrop .sd-group + .sd-group { margin-top: 4px; border-top: 1px solid var(--line2); padding-top: 4px; }
+  .searchdrop .sd-h { font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; color: var(--dim); padding: 6px 8px 2px; }
+  .searchdrop .sd-row { padding: 7px 8px; border-radius: 5px; cursor: pointer; }
+  .searchdrop .sd-row:hover, .searchdrop .sd-row.sel { background: var(--panel2); }
+  .searchdrop .sd-row .sd-t { font-family: var(--serif); font-size: 13.5px; color: var(--text); }
+  .searchdrop .sd-row .sd-s { font-size: 11.5px; color: var(--muted); margin-top: 2px;
+    display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+  .searchdrop .sd-empty { padding: 14px 8px; color: var(--dim); font-family: var(--serif); font-style: italic; font-size: 13px; }
+  .searchdrop .sd-foot { padding: 6px 8px 2px; font-size: 11px; color: var(--dim); }
+
+  /* ---- theme toggle: 3-state (light/dark/auto), persisted ---- */
+  .themeswitch { display: flex; gap: 1px; background: var(--panel2); border: 1px solid var(--line);
+    border-radius: 5px; padding: 2px; flex-shrink: 0; }
+  .themeswitch span { font-family: var(--mono); font-size: 10.5px; padding: 4px 8px; border-radius: 4px;
+    cursor: pointer; color: var(--muted); }
+  .themeswitch span:hover { color: var(--text); }
+  .themeswitch span.active { background: var(--panel); color: var(--accent); font-weight: 600; }
+
+  /* ---- non-modal side panel (2e): a drawer, not an overlay -- the list
+     behind it stays visible and scrollable, there is no dark backdrop that
+     locks the page, and closing is explicit (X / Escape / another open). ---- */
+  #vfPanel {
+    position: fixed; top: 0; right: 0; bottom: 0; width: min(440px, 92vw);
+    background: var(--panel); border-left: 1px solid var(--line); box-shadow: -8px 0 28px rgba(0,0,0,.16);
+    z-index: 80; display: flex; flex-direction: column; transform: translateX(100%);
+    transition: transform .18s ease;
+  }
+  #vfPanel.open { transform: translateX(0); }
+  #vfPanel .vfp-head { display: flex; align-items: center; gap: 10px; padding: 14px 18px;
+    border-bottom: 1px solid var(--line); flex-shrink: 0; }
+  #vfPanel .vfp-title { font-family: var(--serif); font-size: 15px; font-weight: 600; flex: 1; min-width: 0; }
+  #vfPanel .vfp-close { cursor: pointer; font-family: var(--mono); font-size: 12px; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 4px; padding: 3px 9px; }
+  #vfPanel .vfp-close:hover { color: var(--text); border-color: var(--accent-dim); }
+  #vfPanel .vfp-body { flex: 1; overflow-y: auto; padding: 16px 18px 32px; }
+
+  /* ---- evidence row, quote-first (3a): the verbatim quote IS the visible
+     body -- serif, left rule, low-alpha wash. A mono label line sits above
+     it, a mono provenance line below. Two disclosure levels total: this row
+     (open), the stamp's audit trail (its own page/panel) -- nothing else. ---- */
+  .evrow2 { display: grid; grid-template-columns: 1fr 140px; gap: 14px; align-items: start;
+    padding: 16px 0; border-bottom: 1px solid var(--line2); }
+  .evrow2:last-child { border-bottom: none; }
+  .evrow2 .ev-main { min-width: 0; }
+  .evrow2 .ev-src-entity { font-family: var(--mono); font-size: 10.5px; color: var(--dim); margin-bottom: 4px; }
+  .evrow2 .ev-label { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; color: var(--dim); margin-bottom: 6px;
+    display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .evrow2 .ev-label .stance { border: 1px solid var(--line); border-radius: 3px; padding: 0 5px; }
+  .evrow2 .ev-label .stance.supports { color: var(--ok); border-color: var(--ok); }
+  .evrow2 .ev-label .stance.refutes { color: var(--bad); border-color: var(--bad); }
+  .evrow2 .ev-claim { font-family: var(--serif); font-size: 14.5px; color: var(--text); line-height: 1.5; margin-bottom: 8px; }
+  .evrow2 .ev-claim .val { font-family: var(--mono); color: var(--accent); font-weight: 600; }
+  .evrow2 .ev-quote { font-family: var(--serif); font-size: 17px; line-height: 1.55; color: var(--text);
+    max-width: 66ch; padding: 4px 0 4px 16px; border-left: 3px solid var(--line7, var(--line));
+    background: var(--gold-wash); border-radius: 0 4px 4px 0; }
+  .evrow2.high .ev-quote { border-left-color: var(--accent-dim); }
+  .evrow2.invalid .ev-quote { opacity: .55; }
+  .evrow2 .ev-noquote { font-family: var(--serif); font-size: 15px; color: var(--muted); font-style: italic; }
+  .evrow2 .ev-prov { font-family: var(--mono); font-size: 11px; color: var(--dim); margin-top: 8px;
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .evrow2 .ev-prov a { color: var(--accent-dim); text-decoration: none; }
+  .evrow2 .ev-prov a:hover { text-decoration: underline; }
+  .evrow2 .ev-prov .sep { color: var(--line); }
+  .evrow2 .ev-chips { margin-top: 6px; display: flex; gap: 6px; flex-wrap: wrap; }
+
+  /* the STAMP: signature device of direction C. Plain, unrotated, never
+     red. Gold appears here and only here, and only in the verification
+     line, and only when a verification record exists. */
+  .stamp { width: 140px; border: 1px solid var(--line); border-radius: 3px; padding: 8px 9px;
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; line-height: 1.6; cursor: pointer;
+    color: var(--muted); background: var(--panel2); }
+  .stamp:hover { border-color: var(--accent-dim); }
+  .stamp .st-row { display: flex; justify-content: space-between; gap: 4px; }
+  .stamp .st-k { color: var(--dim); }
+  .stamp .st-v { color: var(--text); text-align: right; }
+  .stamp .st-v.rec { color: var(--gold-solid, var(--accent)); font-weight: 600; }
+  .stamp .st-foot { margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--line); color: var(--accent-dim); font-size: 10px; }
+
+  @media (max-width: 700px) {
+    .evrow2 { grid-template-columns: 1fr; }
+    .stamp { width: 100%; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .stamp .st-row { display: contents; }
+    .stamp .st-foot { margin: 0 0 0 auto; padding: 0; border: none; }
+  }
   .totals { margin-left: auto; display: flex; gap: 18px; font-size: 12px; color: var(--muted); font-family: var(--mono); }
   .totals b { color: var(--text); font-weight: 600; }
   .asof { font-family: var(--mono); font-size: 11px; color: var(--dim); white-space: nowrap; }
@@ -80,7 +209,7 @@
     width: 210px; flex-shrink: 0; border-right: 1px solid var(--line); padding: 16px 14px;
     overflow-y: auto; background: var(--panel);
   }
-  .facets h3 { font-size: 10.5px; text-transform: uppercase; letter-spacing: .6px; color: var(--dim); margin-bottom: 8px; }
+  .facets h3 { font-size: 10.5px; letter-spacing: .6px; color: var(--dim); margin-bottom: 8px; }
   .facets h3 + h3 { margin-top: 18px; }
   .flist { display: flex; flex-direction: column; gap: 1px; }
   .fitem {
@@ -112,14 +241,14 @@
   .detail { flex: 1; overflow-y: auto; padding: 28px 36px; min-width: 0; }
   .detail-empty { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--dim); font-family: var(--serif); font-size: 15px; }
   .dhead { margin-bottom: 22px; }
-  .dhead .kicker { font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: var(--dim); margin-bottom: 6px; display: flex; gap: 8px; align-items: center; }
+  .dhead .kicker { font-size: 11px; letter-spacing: .8px; color: var(--dim); margin-bottom: 6px; display: flex; gap: 8px; align-items: center; }
   .dhead h2 { font-family: var(--serif); font-size: 28px; font-weight: 600; text-wrap: balance; line-height: 1.2; }
   .dhead .aliases { font-size: 12.5px; color: var(--dim); margin-top: 4px; font-style: italic; }
   .dhead .summary { margin-top: 12px; font-size: 14.5px; color: var(--muted); max-width: 65ch; line-height: 1.6; }
   .dhead .idline { margin-top: 10px; font-family: var(--mono); font-size: 11px; color: var(--dim); }
 
   .dsection { margin-top: 30px; }
-  .dsection h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--dim); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+  .dsection h3 { font-size: 12px; letter-spacing: .6px; color: var(--dim); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
 
   .citation {
     padding: 14px 16px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
@@ -147,7 +276,7 @@
   /* ACH matrix + decision link drill-down */
   .achx { overflow-x: auto; margin-top: 8px; }
   .achx table { border-collapse: collapse; font-size: 12px; min-width: 100%; }
-  .achx th { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .4px;
+  .achx th { font-family: var(--mono); font-size: 10px; letter-spacing: .4px;
     color: var(--dim); text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line);
     max-width: 140px; }
   .achx td { padding: 5px 8px; border-bottom: 1px solid var(--line2); vertical-align: baseline; }
@@ -216,7 +345,7 @@
   .ck-card.u3 { border-left-color: var(--bad); }
   .ck-card.u2 { border-left-color: var(--accent); }
   .ck-card .row1 { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
-  .ck-card .kind { font-family: var(--mono); font-size: 10px; text-transform: uppercase;
+  .ck-card .kind { font-family: var(--mono); font-size: 10px;
     letter-spacing: .5px; color: var(--dim); border: 1px solid var(--line); border-radius: 3px; padding: 1px 6px; }
   .ck-card .lbl { font-size: 13px; font-weight: 600; flex: 1; min-width: 200px; }
   .ck-card .det { font-size: 12px; color: var(--muted); margin-top: 5px; line-height: 1.45; }
@@ -229,7 +358,7 @@
   .ck-cmd button:hover { color: var(--accent); border-color: var(--accent-dim); }
   .ck-table { width: 100%; border-collapse: collapse; font-size: 12.5px; background: var(--panel);
     border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
-  .ck-table th { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .5px;
+  .ck-table th { font-family: var(--mono); font-size: 10px; letter-spacing: .5px;
     color: var(--dim); text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
   .ck-table td { padding: 7px 10px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
   .ck-table tr:last-child td { border-bottom: none; }
@@ -239,7 +368,7 @@
   .ceil.none { color: var(--bad); border: 1px solid var(--bad); }
   .ck-lanes { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
   .ck-lane { background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 9px; min-height: 60px; }
-  .ck-lane h4 { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .5px;
+  .ck-lane h4 { font-family: var(--mono); font-size: 10px; letter-spacing: .5px;
     color: var(--dim); margin-bottom: 7px; }
   .playcard { background: var(--panel); border: 1px solid var(--line); border-radius: 5px;
     padding: 8px 10px; margin-bottom: 6px; font-size: 12px; }
@@ -257,7 +386,7 @@
   .deccard.suspect { border-left-color: var(--bad); box-shadow: inset 0 0 0 1px rgba(209,106,90,.3); }
   .deccard .drow { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
   .deccard .dref { font-family: var(--serif); font-weight: 700; font-size: 15px; }
-  .deccard .dst { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .5px;
+  .deccard .dst { font-family: var(--mono); font-size: 10px; letter-spacing: .5px;
     padding: 1px 7px; border-radius: 3px; border: 1px solid var(--line); color: var(--muted); }
   .deccard.decided .dst { color: var(--ok); border-color: var(--ok); }
   .deccard.suspect .dst { color: var(--bad); border-color: var(--bad); }
@@ -309,7 +438,7 @@
   /* play strip on prospect cards and dossiers */
   .playstrip { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; margin-top: 8px;
     padding: 7px 10px; background: var(--panel2); border: 1px solid var(--line); border-radius: 5px; font-size: 12px; }
-  .playstrip .pstate { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase;
+  .playstrip .pstate { font-family: var(--mono); font-size: 10.5px;
     letter-spacing: .5px; color: var(--accent); border: 1px solid var(--accent-dim); border-radius: 3px; padding: 1px 7px; }
   .playstrip.stalled .pstate { color: var(--bad); border-color: var(--bad); }
   .playstrip .pnext { color: var(--muted); flex: 1; min-width: 160px; }
@@ -351,7 +480,7 @@
     border-radius: 4px; padding: 3px 10px; font-size: 13px; cursor: pointer; font-family: var(--mono); }
   .cal-head .nav button:hover { color: var(--accent); border-color: var(--accent-dim); }
   .grid7 { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
-  .grid7 .dow { background: var(--panel); padding: 6px 8px; font-size: 10.5px; text-transform: uppercase; letter-spacing: .5px; color: var(--dim); text-align: center; }
+  .grid7 .dow { background: var(--panel); padding: 6px 8px; font-size: 10.5px; letter-spacing: .5px; color: var(--dim); text-align: center; }
   .cell { background: var(--panel2); min-width: 0; min-height: 92px; padding: 5px 6px; display: flex; flex-direction: column; gap: 3px; }
   .cell.out { opacity: .35; }
   .cell.today { background: var(--panel); box-shadow: inset 0 0 0 1px var(--accent-dim); }
@@ -365,7 +494,7 @@
   .ev-chip.overdue { opacity: .6; text-decoration: line-through; }
   .ev-chip:hover { background: var(--panel); }
   .rail-sec { margin-bottom: 22px; }
-  .rail-sec h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: var(--dim); margin-bottom: 9px; }
+  .rail-sec h3 { font-size: 11px; letter-spacing: .6px; color: var(--dim); margin-bottom: 9px; }
   .mile { padding: 9px 11px; background: var(--panel2); border: 1px solid var(--line); border-radius: 5px;
     margin-bottom: 7px; border-left: 3px solid var(--accent); }
   .mile.tender { border-left-color: var(--ok); }
@@ -428,7 +557,7 @@
   #view-patterns { padding: 24px 32px; overflow-y: auto; }
   .patgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px; max-width: 1200px; }
   .patcard { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
-  .patcard h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--dim); padding: 10px 14px; border-bottom: 1px solid var(--line); font-weight: 600; }
+  .patcard h3 { font-size: 12px; letter-spacing: .6px; color: var(--dim); padding: 10px 14px; border-bottom: 1px solid var(--line); font-weight: 600; }
   .patrow { display: flex; align-items: center; gap: 10px; padding: 6px 14px; border-bottom: 1px solid var(--line2); font-size: 12.5px; }
   .patrow:last-child { border-bottom: 0; }
   .patrow .lbl { min-width: 90px; }
@@ -436,6 +565,65 @@
   .patrow .bar i { display: block; height: 100%; background: var(--accent); }
   .patrow .v { font-family: var(--mono); font-size: 11.5px; color: var(--muted); min-width: 110px; text-align: right; }
   .vchip { display: inline-block; font-family: var(--mono); font-size: 10px; padding: 1px 6px; border-radius: 3px; background: var(--panel2); color: var(--accent-dim); border: 1px solid var(--line); margin-right: 3px; }
+
+  /* ---- table craft: hairline rules, no zebra, tabular numerals, numbers
+     right-aligned / text left-aligned, header alignment follows its data ---- */
+  .num, .ck-table td, .achx td.mk { font-variant-numeric: tabular-nums; }
+  .ck-table td:nth-child(2), .ck-table td:nth-child(3), .ck-table td:nth-child(4),
+  .ck-table td:nth-child(5), .ck-table th:nth-child(2), .ck-table th:nth-child(3),
+  .ck-table th:nth-child(4), .ck-table th:nth-child(5) { text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* long lists: content-visibility keeps a 1,600-row ledger cheap to paint
+     without virtualization (explicitly ruled out by the proposal) */
+  .evlist > .evrow2, .elist .erow, .prlist .prcard {
+    content-visibility: auto; contain-intrinsic-size: 0 140px;
+  }
+
+  /* ---- mobile (D10): the 390pt layout was broken -- 72px dossier column,
+     48px calendar cells, sub-32px tap targets. Single-column stacking with
+     a push/back pattern, sticky headers, and >=40px tap targets. ---- */
+  @media (max-width: 700px) {
+    header { flex-wrap: wrap; gap: 10px 14px; position: sticky; top: 0; z-index: 50; }
+    .searchbar { order: 3; width: 100%; max-width: none; }
+    .tab { padding: 9px 13px; font-size: 13.5px; min-height: 40px; display: flex; align-items: center; }
+    .totals { display: none; }
+    .themeswitch span { padding: 8px 9px; min-height: 40px; display: flex; align-items: center; }
+
+    /* Library: stack facets / list / detail. Selecting an entity PUSHES the
+       dossier full-width with a back affordance, instead of squeezing a
+       72px column beside a 340px list. */
+    #view-entities.active { display: block; }
+    #view-entities .facets { width: 100%; border-right: 0; border-bottom: 1px solid var(--line);
+      display: none; }
+    #view-entities.show-facets .facets { display: block; }
+    #view-entities .elist { width: 100%; border-right: 0; }
+    #view-entities.show-detail .elist, #view-entities.show-detail .facets { display: none; }
+    #view-entities .erow { min-height: 44px; padding: 12px 16px; }
+    .detail, .detail-empty { width: 100%; }
+    #view-entities.show-detail .detail { display: block !important; }
+    .mobile-back { display: none; font-family: var(--mono); font-size: 13px; color: var(--accent-dim);
+      padding: 10px 16px; min-height: 40px; align-items: center; gap: 6px; cursor: pointer;
+      border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--bg); z-index: 5; }
+    #view-entities.show-detail .mobile-back { display: flex; }
+    .mobile-facets-toggle { display: none; font-family: var(--mono); font-size: 12px; color: var(--muted);
+      padding: 9px 16px; min-height: 40px; align-items: center; border-bottom: 1px solid var(--line); cursor: pointer; }
+    #view-entities:not(.show-detail) .mobile-facets-toggle { display: flex; }
+
+    /* Calendar: the 7-col grid degrades to 12px cells on a phone -- swap it
+       for the agenda list that already exists in the rail. */
+    #view-calendar.active { display: block; }
+    .cal-main .grid7, .cal-main .cal-head .nav { display: none; }
+    .cal-rail { width: 100%; border-left: 0; padding: 14px 16px 40px; }
+    .mile { min-height: 40px; }
+    .ev-chip { min-height: 28px; display: flex; align-items: center; }
+
+    /* Pipeline / evidence / prcard tap targets */
+    .prcard, .evrow2 { padding-left: 12px; padding-right: 12px; }
+    .modeswitch div { min-height: 40px; display: flex; align-items: center; justify-content: center; }
+    .ck-cmd button, .minicopy { min-height: 32px; padding: 6px 12px; }
+
+    #vfPanel { width: 100%; }
+  }
 </style>
 </head>
 <body>
@@ -443,10 +631,12 @@
   <h1>research <em>archive</em></h1>
   <div class="searchbar">
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.5" stroke="currentColor"/><path d="M9.5 9.5L13 13" stroke="currentColor" stroke-linecap="round"/></svg>
-    <input id="search" type="text" placeholder="search entities, claims, sources…">
+    <input id="search" type="text" placeholder="search entities, claims, prospects, changes…" autocomplete="off">
+    <div id="searchDrop" class="searchdrop"></div>
   </div>
   <div class="tabs">
-    <div class="tab active" data-view="cockpit">Cockpit</div>
+    <div class="tab active" data-view="changes">Changes</div>
+    <div class="tab" data-view="cockpit">Cockpit</div>
     <div class="tab" data-view="prospects">Pipeline</div>
     <div class="tab" data-view="entities">Library</div>
     <div class="tab" data-view="questions">Questions</div>
@@ -454,10 +644,14 @@
   </div>
   <div class="totals" id="totals"></div>
   <div class="asof" id="asof" title="when this data was generated"></div>
+  <div class="themeswitch" id="themeSwitch" title="light / dark / auto">
+    <span data-theme="light">light</span><span data-theme="dark">dark</span><span data-theme="auto">auto</span>
+  </div>
 </header>
 
 <main>
   <div class="view" id="view-entities">
+    <div class="mobile-facets-toggle" id="mobileFacetsToggle">filters</div>
     <div class="facets">
       <div class="modeswitch"><div class="active" data-mode="entities">Organizations</div><div data-mode="evidence">Claims</div></div>
       <h3>Type</h3>
@@ -473,11 +667,12 @@
       </div>
     </div>
     <div class="elist" id="entityList"></div>
+    <div class="mobile-back" id="mobileBack">&larr; back to the list</div>
     <div class="detail-empty" id="detailEmpty">Select an entity to read its dossier</div>
     <div class="detail" id="detail" style="display:none"></div>
   </div>
 
-  <div class="view active" id="view-cockpit"></div>
+  <div class="view" id="view-cockpit"></div>
   <div class="view" id="view-calendar"></div>
 
   <div class="view" id="view-prospects">
@@ -512,7 +707,7 @@
 
   <div class="view" id="view-patterns"></div>
 
-  <div class="view" id="view-changes"></div>
+  <div class="view active" id="view-changes"></div>
   <div class="view" id="view-usecase"></div>
   <div class="view" id="view-route404"></div>
 </main>
@@ -524,6 +719,50 @@ let state = { view: "entities", search: "", type: "", status: "", country: "", v
 const fmtDkk = v => v >= 1e6 ? "~" + (v / 1e6).toFixed(1) + "M DKK/yr" : "~" + Math.round(v / 1e3) + "k DKK/yr";
 
 function fmtDate(d) { return d ? d.slice(0, 10) : ""; }
+
+// ---- non-modal side panel (2e): a drawer over the right edge, not a
+// modal and not inline expansion. The list underneath stays visible and
+// scrollable -- there is no dark backdrop, nothing else is disabled, and
+// closing is explicit (✕ / Escape / opening something else replaces it).
+function vfOpenPanel(title, bodyHtml) {
+  let p = $("vfPanel");
+  if (!p) {
+    p = document.createElement("div");
+    p.id = "vfPanel";
+    p.innerHTML = `<div class="vfp-head"><div class="vfp-title" id="vfPanelTitle"></div><div class="vfp-close" id="vfPanelClose" tabindex="0" role="button">close ✕</div></div><div class="vfp-body" id="vfPanelBody"></div>`;
+    document.body.appendChild(p);
+    $("vfPanelClose").addEventListener("click", vfClosePanel);
+  }
+  $("vfPanelTitle").textContent = title;
+  $("vfPanelBody").innerHTML = bodyHtml;
+  requestAnimationFrame(() => p.classList.add("open"));
+}
+function vfClosePanel() {
+  const p = $("vfPanel");
+  if (p) p.classList.remove("open");
+}
+document.addEventListener("keydown", e => { if (e.key === "Escape") vfClosePanel(); });
+
+// ---- theme toggle (direction C, part 4): 3-state light/dark/auto,
+// persisted to localStorage. "auto" removes the data-theme attribute so
+// the @media(prefers-color-scheme) rules decide, matching what the page
+// already did before this control existed.
+const VF_THEME_KEY = "vf_theme";
+function vfApplyTheme(mode) {
+  if (mode === "light" || mode === "dark") document.documentElement.setAttribute("data-theme", mode);
+  else document.documentElement.removeAttribute("data-theme");
+  document.querySelectorAll("#themeSwitch span").forEach(s =>
+    s.classList.toggle("active", s.dataset.theme === mode));
+}
+function vfInitTheme() {
+  const saved = localStorage.getItem(VF_THEME_KEY) || "auto";
+  vfApplyTheme(saved);
+  document.querySelectorAll("#themeSwitch span").forEach(s => s.addEventListener("click", () => {
+    localStorage.setItem(VF_THEME_KEY, s.dataset.theme);
+    vfApplyTheme(s.dataset.theme);
+  }));
+}
+vfInitTheme();
 
 // @@VF-API-START@@
 async function api(path) {
@@ -828,6 +1067,11 @@ async function vfResolveApi(path) {
   if (u.pathname === "/api/patterns") return A.patterns;
   if (u.pathname === "/api/calendar") return A.calendar;
   if (u.pathname === "/api/cockpit") return A.cockpit;
+  // Changes tab (2a) reads this. The exporter change that ships it is a
+  // parallel lane's work (export_static.py); this resolver just passes
+  // through whatever it finds, or null when the field isn't in this build
+  // yet -- loadChanges() below degrades honestly rather than erroring.
+  if (u.pathname === "/api/changelog") return A.changelog || null;
   if (u.pathname === "/api/crew") return A.crew;
   if (u.pathname === "/api/ach") return A.ach;
   if (u.pathname.startsWith("/api/entity/")) {
@@ -871,7 +1115,7 @@ async function vfResolveApi(path) {
 // #/changes, plus tab routes. Filter tweaks use replaceState (no new
 // history entry); real navigation (tabs, dossiers, evidence) pushes a
 // hash change so back/forward move between actual places, not keystrokes. ----
-const VF_TAB_ROUTES = { cockpit: "cockpit", prospects: "pipeline", entities: "library", questions: "questions", calendar: "calendar" };
+const VF_TAB_ROUTES = { changes: "changes", cockpit: "cockpit", prospects: "pipeline", entities: "library", questions: "questions", calendar: "calendar" };
 const VF_TAB_ROUTES_REV = Object.fromEntries(Object.entries(VF_TAB_ROUTES).map(([k, v]) => [v, k]));
 
 function vfSetHash(pathWithQuery, replace) {
@@ -907,10 +1151,6 @@ function showUsecasePlaceholder(slug) {
   activateGenericView("view-usecase", "Use case: " + (slug || "?"),
     "Vertical use-case pages ship in a later wave. This URL is reserved so the link can be shared and revisited today.");
 }
-function showChangesPlaceholder() {
-  activateGenericView("view-changes", "Changes",
-    "The since-last-visit digest ships in a later wave. This URL is reserved so the link can be shared and revisited today.");
-}
 function showUnknownRoute(head) {
   activateGenericView("view-route404", "Nothing here",
     `"#/${head}" doesn't match a known page. Use the tabs above, or a link shared from this archive.`);
@@ -943,6 +1183,7 @@ function activateTab(viewKey, opts) {
   document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + viewKey));
   state.view = viewKey;
   if (!opts.fromRoute) vfSetHash("/" + (VF_TAB_ROUTES[viewKey] || viewKey));
+  if (viewKey === "changes") loadChanges();
   if (viewKey === "cockpit") loadCockpit();
   if (viewKey === "entities") setLibMode(libMode);
   if (viewKey === "questions") loadQuestions();
@@ -966,7 +1207,7 @@ function vfActivateEntitiesView(mode) {
 
 async function vfHandleHashChange() {
   const { parts, params } = vfParseHash();
-  if (!parts.length) { activateTab("cockpit", { fromRoute: true }); return; }
+  if (!parts.length) { activateTab("changes", { fromRoute: true }); return; }
   const [head, sub] = parts;
   if (head === "entity") {
     const id = parseInt(sub, 10);
@@ -983,7 +1224,6 @@ async function vfHandleHashChange() {
   }
   if (head === "evidence") { vfActivateEntitiesView("evidence"); routeEvidence(sub); return; }
   if (head === "usecase") { showUsecasePlaceholder(sub || ""); return; }
-  if (head === "changes") { showChangesPlaceholder(); return; }
   const tabKey = VF_TAB_ROUTES_REV[head];
   if (tabKey) {
     activateTab(tabKey, { fromRoute: true });
@@ -1077,6 +1317,7 @@ async function loadEntities() {
     state.selectedEntity = null;
     $("detail").style.display = "none";
     $("detailEmpty").style.display = "flex";
+    $("view-entities").classList.remove("show-detail");
   }
 }
 
@@ -1111,31 +1352,123 @@ function loadAch() {
   return achPromise;
 }
 
+// ---- trust marks (3b/3c/3d): TWO independent marks -- grade/maturity and
+// verification basis -- each from a closed vocabulary with an explicit
+// "cannot be judged" value, never blended into one score. GOLD IS DEMOTED
+// to exactly one meaning across the whole chrome: "this row has a
+// verification record" (the .rec class below), nowhere else.
+//
+// Neither field exists as its own column in the shipped data, so both are
+// DERIVED, honestly, from what does: `confidence` (a 0-1 float) buckets
+// into a maturity vocabulary; `votes_n` (distinct passing verifiers,
+// already computed server-side) is the verification-basis vocabulary
+// as-is. Stance is derived from the ACH consistency marks this archive
+// already computes (C=consistent/supports, I=inconsistent/refutes,
+// N=neutral) -- "we already grade refutations" (3d) refers to those marks.
+function evidenceStance(e) {
+  const ach = achByEvidence[e.id] || [];
+  if (ach.some(g => g.cls === "inc")) return "refutes";
+  if (ach.length) return "supports";
+  return "informs";
+}
+function evidenceGrade(e) {
+  if (e.confidence == null) return "not rated";
+  const c = e.confidence;
+  if (c >= 0.75) return "established";
+  if (c >= 0.5) return "provisional";
+  if (c >= 0.25) return "preliminary";
+  return "unconfirmed";
+}
+function evidenceVerify(e) {
+  if (e.votes_n === undefined || e.votes_n === null) return { label: "cannot be judged", rec: false };
+  if (e.votes_n > 0) return { label: `verified · ${e.votes_n}×`, rec: true };
+  return { label: "unverified", rec: false };
+}
+
+// Every evidence row rendered anywhere is remembered here so the stamp's
+// audit-trail link (opened in the side panel, never a popover, never
+// hover-only) can find the full row without re-fetching or re-threading
+// state through every call site.
+const VF_EVLOOKUP = {};
+
+function vfAuditTrailHtml(idStr) {
+  const e = VF_EVLOOKUP[idStr];
+  if (!e) return `<div class="empty">This claim isn't loaded in the current view. Open it from its list first.</div>`;
+  const grade = evidenceGrade(e), verify = evidenceVerify(e), stance = evidenceStance(e);
+  const guards = achByEvidence[e.id] || [];
+  const row = (k, v, cls) => `<tr><td style="padding:6px 10px 6px 0;color:var(--dim);font-family:var(--mono);font-size:11px;letter-spacing:.06em;white-space:nowrap">${esc(k)}</td><td style="padding:6px 0;text-align:right;font-family:var(--mono);font-size:12.5px${cls ? ";" + cls : ""}">${v}</td></tr>`;
+  return `
+    <div class="mlabel">Evidence · #${e.id} · ${esc(stance)}</div>
+    <div class="ev-claim" style="font-size:15px;margin:8px 0">${esc(e.claim)}</div>
+    ${e.quote ? `<div class="ev-quote" style="font-size:15.5px">“${esc(e.quote)}”</div>` : `<div class="ev-noquote">no verbatim quote captured for this row</div>`}
+    <div class="dsection">
+      <h3>What this record means</h3>
+      <div class="det" style="font-size:12.5px;color:var(--muted);line-height:1.6">
+        A mark here means <b style="color:var(--text)">a verification record exists</b> — never that the claim
+        is true. Two independent marks, each from its own closed vocabulary:
+      </div>
+      <table style="width:100%;margin-top:10px;border-collapse:collapse">
+        ${row("grade / maturity", esc(grade))}
+        ${row("verification basis", esc(verify.label), verify.rec ? "color:var(--gold-solid, var(--accent));font-weight:600" : "")}
+        ${row("stance on this record", esc(stance))}
+        ${row("stakes", esc(e.stakes || "low"))}
+      </table>
+    </div>
+    ${(e.voters && e.voters.length) ? `<div class="dsection"><h3>Verifiers who passed this row</h3>
+      <div class="det">${e.voters.map(esc).join(", ")}${e.verified_by ? " · promoted by " + esc(e.verified_by) : ""}</div></div>` : ""}
+    ${guards.length ? `<div class="dsection"><h3>What rests on this row</h3>
+      ${guards.map(g => `<div class="dlink" style="cursor:default"><span class="lab" title="${esc(g.full || "")}">${esc(g.t)}</span></div>`).join("")}</div>` : ""}
+    <div class="dsection"><h3>Provenance</h3>
+      <div class="det">retrieved ${esc(fmtDate(e.retrieved_at))}${e.source_host ? " · " + esc(e.source_host) : ""}
+      ${e.source_url ? ` · <a href="${esc(e.source_url)}" target="_blank" rel="noopener">source ↗</a>` : ""}</div>
+      ${e.invalid_at ? `<div class="det" style="color:var(--bad);margin-top:6px">retracted ${esc(fmtDate(e.invalid_at))} — kept for the record, no longer treated as valid.</div>` : ""}
+      ${e.needs_reverify ? `<div class="det" style="color:var(--warn);margin-top:6px">flagged for re-verification.</div>` : ""}
+    </div>
+    <div class="dsection"><a href="#/evidence/${e.id}" onclick="vfClosePanel()" style="font-family:var(--mono);font-size:12px;color:var(--accent-dim)">open this claim's own page →</a></div>`;
+}
+document.addEventListener("click", ev => {
+  const st = ev.target.closest(".stamp[data-audit]");
+  if (st) vfOpenPanel("Verification record", vfAuditTrailHtml(st.dataset.audit));
+});
+document.addEventListener("keydown", ev => {
+  if (ev.key === "Enter" && document.activeElement && document.activeElement.matches(".stamp[data-audit]"))
+    vfOpenPanel("Verification record", vfAuditTrailHtml(document.activeElement.dataset.audit));
+});
+
+// ---- evidence row, quote-first (3a). The verbatim quote is the visible
+// body -- serif, left rule, low-alpha wash -- not a collapsed "▸ quote".
+// A mono label sits above (stance included), a mono provenance line below.
+// Two disclosure levels total on this path: this row (open by default),
+// and the stamp's own audit-trail page (the side panel). Nothing else is
+// hover-only.
 function citationHtml(e, showEntity) {
+  VF_EVLOOKUP[e.id] = e;
+  const stance = evidenceStance(e);
+  const grade = evidenceGrade(e);
+  const verify = evidenceVerify(e);
   const chips = [];
-  if (e.stakes === "high") chips.push(`<span class="chip">high-stakes</span>`);
-  if (e.invalid_at) chips.push(`<span class="chip invalidated">invalidated</span>`);
   if (e.needs_reverify) chips.push(`<span class="chip stale">needs re-verify</span>`);
-  // Verification depth: how many distinct verifiers passed this row. The
-  // votes are the system's strongest guarantee; hiding them made a 3-vote
-  // unanimous high-stakes row indistinguishable from a bare note.
-  if (e.votes_n !== undefined && !e.invalid_at) {
-    chips.push(e.votes_n > 0
-      ? `<span class="chip verified" title="passed by ${esc((e.voters || []).join(", ")) || "verifier"}${e.verified_by ? "; promoted by " + esc(e.verified_by) : ""}">✓ ${e.votes_n} verifier${e.votes_n === 1 ? "" : "s"}</span>`
-      : `<span class="chip unverified" title="no recorded verifier votes">unvoted</span>`);
-  }
-  // What rests on this row: decision links and hypothesis marks.
-  (achByEvidence[e.id] || []).slice(0, 4).forEach(g =>
+  if (e.invalid_at) chips.push(`<span class="chip invalidated">retracted ${esc(fmtDate(e.invalid_at))}</span>`);
+  (achByEvidence[e.id] || []).slice(0, 3).forEach(g =>
     chips.push(`<span class="chip guards ${g.cls}" title="${esc(g.full || "")}">→ ${esc(g.t)}</span>`));
   const val = (e.value_num != null) ? ` <span class="val">${e.value_num}${e.unit ? " " + esc(e.unit) : ""}</span>` : "";
-  return `<div class="citation${e.invalid_at ? " invalid" : ""}${e.stakes === "high" ? " high" : ""}">
-    ${showEntity ? `<div class="src-entity">${esc(e.entity_name || "—")}</div>` : ""}
-    <div class="claim">${esc(e.claim)}${val}</div>
-    ${e.quote ? `<details class="qd"><summary></summary><div class="quote">"${esc(e.quote)}"</div></details>` : ""}
-    <div class="footline">
-      <span>${fmtDate(e.retrieved_at)}</span>
-      ${e.source_host ? `<span class="sep">·</span><a href="${esc(e.source_url)}" target="_blank" rel="noopener">${esc(e.source_host)}</a>` : ""}
-      ${chips.length ? `<span class="sep">·</span>${chips.join(" ")}` : ""}
+  return `<div class="evrow2${e.invalid_at ? " invalid" : ""}${e.stakes === "high" ? " high" : ""}">
+    <div class="ev-main">
+      ${showEntity ? `<div class="ev-src-entity">${esc(e.entity_name || "—")}</div>` : ""}
+      <div class="ev-label">Evidence · #${e.id} · <span class="stance ${stance}">${esc(stance)}</span></div>
+      <div class="ev-claim">${esc(e.claim)}${val}</div>
+      ${e.quote ? `<div class="ev-quote">“${esc(e.quote)}”</div>` : `<div class="ev-noquote">no verbatim quote captured for this row</div>`}
+      <div class="ev-prov">
+        <span>${esc(fmtDate(e.retrieved_at))}</span>
+        ${e.source_host ? `<span class="sep">·</span><a href="${esc(e.source_url)}" target="_blank" rel="noopener">${esc(e.source_host)}</a>` : ""}
+      </div>
+      ${chips.length ? `<div class="ev-chips">${chips.join(" ")}</div>` : ""}
+    </div>
+    <div class="stamp" data-audit="${e.id}" role="button" tabindex="0" title="open this row's verification record">
+      <div class="st-row"><span class="st-k">grade</span><span class="st-v">${esc(grade)}</span></div>
+      <div class="st-row"><span class="st-k">verify</span><span class="st-v${verify.rec ? " rec" : ""}">${esc(verify.label)}</span></div>
+      <div class="st-row"><span class="st-k">stakes</span><span class="st-v">${esc(e.stakes || "low")}</span></div>
+      <div class="st-foot">audit trail →</div>
     </div>
   </div>`;
 }
@@ -1145,6 +1478,7 @@ async function selectEntity(id, opts) {
   state.selectedEntity = id;
   if (!opts.fromRoute) vfSetHash("/entity/" + id);
   $("entityList").querySelectorAll(".erow").forEach(el => el.classList.toggle("active", parseInt(el.dataset.id) === id));
+  $("view-entities").classList.add("show-detail"); // mobile: push the dossier full-width (D10)
   $("detailEmpty").style.display = "none";
   const det = $("detail");
   det.style.display = "block";
@@ -1608,6 +1942,126 @@ async function loadQuestions() {
   }
 }
 
+// ---- Changes tab (2a): the new landing view, job #1 ("what changed since
+// I last looked?"), served 0% by the old product. Requires the `changelog`
+// field from the parallel export lane; degrades to an honest "not in this
+// build yet" message when it's absent, rather than erroring or faking data.
+const VF_LAST_VISIT_KEY = "vf_last_visit";
+const VF_LAST_VISIT_PREV_KEY = "vf_last_visit_prev";
+const VF_CHANGE_VERB_MAP = {
+  add: "added", added: "added", create: "added", created: "added", new: "added",
+  revise: "revised", revised: "revised", update: "revised", updated: "revised", edit: "revised", edited: "revised",
+  supersede: "superseded", superseded: "superseded", replace: "superseded", replaced: "superseded", merge: "superseded", merged: "superseded",
+  retract: "retracted", retracted: "retracted", invalidate: "retracted", invalidated: "retracted", delete: "retracted", deleted: "retracted",
+};
+// Field names are not yet settled by the exporter lane, so this reads
+// several plausible shapes rather than assuming one.
+function vfNormalizeChangeEntry(raw) {
+  raw = raw || {};
+  const verbRaw = String(raw.verb || raw.action || raw.kind || raw.type || "").toLowerCase();
+  const verb = VF_CHANGE_VERB_MAP[verbRaw] || (raw.invalid_at ? "retracted" : "revised");
+  const at = raw.at || raw.date || raw.ts || raw.timestamp || raw.created_at || raw.changed_at || raw.retrieved_at || "";
+  const subject = raw.subject || raw.subject_name || raw.entity_name || raw.name || raw.label || "";
+  const summary = raw.summary || raw.sentence || raw.detail || raw.description || raw.text ||
+    (subject ? `${subject} was ${verb}.` : "A record changed.");
+  return {
+    verb, at, subject, summary,
+    entityId: raw.entity_id ?? raw.entityId ?? null,
+    evId: raw.evidence_id ?? raw.evidenceId ?? null,
+  };
+}
+
+async function loadChanges() {
+  const { params } = vfParseHash();
+  const sinceOverride = params.get("since");
+
+  let actNowHtml = "";
+  try {
+    const c = await api("/api/cockpit");
+    const items = (c.act_now || []).slice(0, 4);
+    if (items.length) actNowHtml = `<div class="ck-strip">${items.map(a =>
+      `<span>${a.urgency ? `<span class="urg urg-${a.urgency}">${"!".repeat(a.urgency)}</span> ` : ""}${esc(a.label)}</span>`).join("")}</div>`;
+  } catch (e) { /* cockpit not reachable yet -- the strip is a nicety, not a blocker */ }
+
+  let raw = null;
+  try { raw = await api("/api/changelog"); } catch (e) { raw = null; }
+  if (!raw || !Array.isArray(raw) || !raw.length) {
+    $("view-changes").innerHTML = `<div class="chg-wrap">
+      ${actNowHtml}
+      <div class="empty" style="text-align:left;padding:40px 0">
+        <div style="font-family:var(--serif);font-size:16px;color:var(--text);margin-bottom:6px">Changelog not in this build yet</div>
+        <div style="font-size:13px;color:var(--muted)">This export doesn't carry a changelog. Once it does, this tab
+          will show what was added, revised, superseded or retracted since your last visit.</div>
+      </div></div>`;
+    return;
+  }
+
+  const entries = raw.map(vfNormalizeChangeEntry).sort((a, b) => (b.at || "").localeCompare(a.at || ""));
+  const savedVisit = localStorage.getItem(VF_LAST_VISIT_KEY);
+  const boundary = sinceOverride || savedVisit || "1970-01-01T00:00:00Z";
+  const hasSavedVisit = !!(sinceOverride || savedVisit);
+  const newCount = entries.filter(e => e.at && e.at > boundary).length;
+
+  const GROUPS = [["added", "Added"], ["revised", "Revised"], ["superseded", "Superseded"], ["retracted", "Retracted"]];
+  const byVerb = {};
+  entries.forEach(e => (byVerb[e.verb] = byVerb[e.verb] || []).push(e));
+
+  const entryHtml = e => `<div class="chg-entry${e.verb === "retracted" ? " chg-retracted" : ""}">
+    <div class="chg-meta">${e.at ? `<span class="mono">${esc(fmtDate(e.at))}</span>` : ""}${e.subject ? `${e.at ? " · " : ""}<b>${esc(e.subject)}</b>` : ""}</div>
+    <div class="chg-sentence">${esc(e.summary)}</div>
+    ${(e.entityId != null || e.evId != null) ? `<a href="#/${e.entityId != null ? "entity/" + e.entityId : "evidence/" + e.evId}" class="chg-link">open →</a>` : ""}
+  </div>`;
+
+  const groupHtml = (key, title) => {
+    const items = byVerb[key] || [];
+    if (!items.length) return "";
+    return `<div class="chg-group"><h3>${title} <span class="n">${items.length}</span></h3>${items.map(entryHtml).join("")}</div>`;
+  };
+
+  const dateVal = boundary.slice(0, 10);
+  const shareHash = "#/changes?since=" + encodeURIComponent(boundary);
+
+  $("view-changes").innerHTML = `<div class="chg-wrap">
+    ${actNowHtml}
+    <div class="chg-boundary">
+      <span class="mlabel">since your last visit</span>
+      <input type="date" id="chgSince" value="${esc(dateVal)}">
+      <button id="chgMarkSeen" class="chg-btn">mark all seen</button>
+      ${localStorage.getItem(VF_LAST_VISIT_PREV_KEY) !== null ? `<button id="chgUndo" class="chg-btn ghost">undo</button>` : ""}
+      <a href="${shareHash}" class="chg-share" title="share this exact boundary">share this view</a>
+    </div>
+    ${!hasSavedVisit
+      ? `<div class="empty" style="text-align:left;padding:6px 0 20px"><div style="font-family:var(--serif);font-size:13.5px;color:var(--muted)">No visit recorded yet on this device — showing every entry. Press "mark all seen" once you're caught up.</div></div>`
+      : newCount
+        ? `<div class="chg-banner"><span>${newCount} change${newCount === 1 ? "" : "s"} since ${esc(dateVal)}</span></div>`
+        : `<div class="empty" style="text-align:left;padding:20px 0"><div style="font-family:var(--serif);font-size:15px;color:var(--text)">Nothing has changed since ${esc(dateVal)}.</div></div>`}
+    ${GROUPS.map(([k, t]) => groupHtml(k, t)).join("") || `<div class="empty">No changelog rows recorded.</div>`}
+  </div>`;
+
+  const since = $("chgSince");
+  if (since) since.addEventListener("change", () => {
+    const iso = since.value ? since.value + "T00:00:00Z" : "1970-01-01T00:00:00Z";
+    localStorage.setItem(VF_LAST_VISIT_PREV_KEY, localStorage.getItem(VF_LAST_VISIT_KEY) ?? "");
+    localStorage.setItem(VF_LAST_VISIT_KEY, iso);
+    loadChanges();
+  });
+  const mark = $("chgMarkSeen");
+  if (mark) mark.addEventListener("click", () => {
+    localStorage.setItem(VF_LAST_VISIT_PREV_KEY, localStorage.getItem(VF_LAST_VISIT_KEY) ?? "");
+    localStorage.setItem(VF_LAST_VISIT_KEY, new Date().toISOString());
+    loadChanges();
+  });
+  const undo = $("chgUndo");
+  if (undo) undo.addEventListener("click", () => {
+    const prev = localStorage.getItem(VF_LAST_VISIT_PREV_KEY);
+    if (prev !== null) {
+      if (prev === "") localStorage.removeItem(VF_LAST_VISIT_KEY); else localStorage.setItem(VF_LAST_VISIT_KEY, prev);
+      localStorage.removeItem(VF_LAST_VISIT_PREV_KEY);
+      loadChanges();
+    }
+  });
+}
+
 async function loadCockpit() {
   const c = await api("/api/cockpit");
   await loadAch();
@@ -1837,6 +2291,19 @@ function openEvidenceForQuestion(num) {
 
 document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => activateTab(t.dataset.view)));
 
+// Mobile Library navigation (D10): a back affordance to leave the pushed
+// dossier, and a filters toggle so the facet column isn't permanently
+// eating the one column a 390pt viewport has.
+const mb = $("mobileBack");
+if (mb) mb.addEventListener("click", () => {
+  state.selectedEntity = null;
+  $("detail").style.display = "none";
+  $("detailEmpty").style.display = "flex";
+  $("view-entities").classList.remove("show-detail");
+});
+const mft = $("mobileFacetsToggle");
+if (mft) mft.addEventListener("click", () => $("view-entities").classList.toggle("show-facets"));
+
 // Reflect the search box into the URL (replaceState: a filter tweak, not a
 // place to land on when you hit back) so a search result set is shareable.
 function vfReflectSearchInHash() {
@@ -1867,10 +2334,10 @@ document.addEventListener("keydown", e => {
   if (e.key === "Escape") {
     if (typing) { document.activeElement.blur(); return; }
     if ($("search").value) { $("search").value = ""; $("search").dispatchEvent(new Event("input", {bubbles: true})); return; }
-    if (state.selectedEntity) { state.selectedEntity = null; $("detail").style.display = "none"; $("detailEmpty").style.display = "flex"; }
+    if (state.selectedEntity) { state.selectedEntity = null; $("detail").style.display = "none"; $("detailEmpty").style.display = "flex"; $("view-entities").classList.remove("show-detail"); }
     return;
   }
-  if (!typing && e.key >= "1" && e.key <= "5") {
+  if (!typing && e.key >= "1" && e.key <= "6") {
     const tabs = [...document.querySelectorAll(".tab")];
     const t = tabs[parseInt(e.key) - 1];
     if (t) t.click();
