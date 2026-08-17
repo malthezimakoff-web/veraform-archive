@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
+<script>window.VF = {"buildTs": "2026-08-17T15:10:02.152780+00:00", "core": "data-9f5124c0.enc", "coreDigest": "9f5124c075728045aea1cf9c4e3d8081274549df4bb46bf2065c270933d1d8a6", "details": "details-51db3b7c.enc", "detailsDigest": "51db3b7cf0b997fca96e592961982fd1aa84b26aadcab46039520ba8eedfc362", "keyFp": "84c0fcd1", "schema": 2};</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Veraform research archive</title>
@@ -192,7 +193,8 @@
   /* Block-layout views: the display override must only apply when active,
      otherwise the ID selector beats .view{display:none} and the hidden view
      still occupies flex space as a phantom column. */
-  #view-questions.active, #view-patterns.active { display: block; }
+  #view-questions.active, #view-patterns.active,
+  #view-changes.active, #view-usecase.active, #view-route404.active { display: block; }
   #view-questions { padding: 24px 32px; overflow-y: auto; max-width: 980px; }
   .qcard { display: flex; gap: 16px; align-items: flex-start; padding: 14px 0; border-bottom: 1px solid var(--line2); }
   .qcard .qn { font-family: var(--serif); font-size: 20px; color: var(--dim); min-width: 42px; }
@@ -509,69 +511,311 @@
   <div class="view" id="view-questions"></div>
 
   <div class="view" id="view-patterns"></div>
+
+  <div class="view" id="view-changes"></div>
+  <div class="view" id="view-usecase"></div>
+  <div class="view" id="view-route404"></div>
 </main>
 
-
 <script>
-// ---- static build: key gate + in-memory API resolver ----
-// The server API is replaced by a decrypted in-browser bundle. The fetch
-// path strings stay identical so the UI code is unchanged.
-window.__ARCHIVE__ = null;
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let state = { view: "entities", search: "", type: "", status: "", country: "", vector: "", selectedEntity: null, meta: null };
+const fmtDkk = v => v >= 1e6 ? "~" + (v / 1e6).toFixed(1) + "M DKK/yr" : "~" + Math.round(v / 1e3) + "k DKK/yr";
 
-function b64ToBytes(u8) { return u8; }
+function fmtDate(d) { return d ? d.slice(0, 10) : ""; }
 
-async function deriveKey(pass, salt) {
-  const enc = new TextEncoder();
-  const base = await crypto.subtle.importKey("raw", enc.encode(pass), "PBKDF2", false, ["deriveKey"]);
+// @@VF-API-START@@
+async function api(path) {
+  return vfResolveApi(path);
+}
+// @@VF-API-END@@
+
+// ============================================================================
+// VF static-build support (archive-redesign Wave 1).
+//
+// Local dashboard runs (opened against engine/browser.py) never define
+// window.VF, so none of this activates and api() above just fetches the
+// live server as always.
+//
+// A static/encrypted build stamps, BEFORE this script runs:
+//   window.VF = { core, details, coreDigest, detailsDigest, buildTs, keyFp, schema }
+// where core/details are filenames for two envelope-v2 encrypted payloads:
+//   bytes = "VFA2" (4) | salt (16) | iv (12) | AES-256-GCM ciphertext+tag
+//   plaintext after AES decrypt = gzip-compressed UTF-8 JSON.
+// `core` holds everything except entity_details (loaded at unlock);
+// `details` holds entity_details, keyed by entity id string (loaded lazily,
+// the first time any dossier is opened, then cached for the session).
+// ============================================================================
+
+const VF_MAGIC = "VFA2";
+let VF_CORE = null;            // decrypted core bundle
+let VF_PASS = null;            // the key that worked, kept in memory for the details fetch
+let VF_DETAILS = null;         // decrypted { "<id>": {...} } once fetched
+let VF_DETAILS_PROMISE = null; // in-flight/settled fetch+decrypt, so a second dossier open is free
+
+function vfBytesToHex(bytes) {
+  return [...bytes].map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function vfSha256Hex(buf) {
+  return vfBytesToHex(new Uint8Array(await crypto.subtle.digest("SHA-256", buf)));
+}
+
+async function vfDeriveKey(pass, salt) {
+  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(pass), "PBKDF2", false, ["deriveKey"]);
   return crypto.subtle.deriveKey(
     { name: "PBKDF2", salt, iterations: 310000, hash: "SHA-256" },
     base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
 }
 
-async function tryDecrypt(pass) {
-  const buf = await (await fetch("data.enc")).arrayBuffer();
+// window.VF.keyFp is the first 8 hex of SHA-256 of the key PBKDF2 derives
+// from the entered pass using a FIXED salt (not the random per-payload
+// salt), computed the same way by export_static.py. Comparing fingerprints
+// is a cheap, definitive, pre-download wrong-key check: it needs no
+// network round trip and never mistakes a stale payload for a bad key,
+// because it says nothing about payload freshness at all -- it only says
+// "yes/no, this key matches what this index.html was built with".
+const VF_KEYFP_SALT = new TextEncoder().encode("veraform-archive-v2-keyfp");
+async function vfKeyFingerprint(pass) {
+  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(pass), "PBKDF2", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", salt: VF_KEYFP_SALT, iterations: 310000, hash: "SHA-256" }, base, 256);
+  const digest = await crypto.subtle.digest("SHA-256", bits);
+  return vfBytesToHex(new Uint8Array(digest)).slice(0, 8);
+}
+
+// Fetch with a real progress callback: on a slow link the download is ~97%
+// of cold start (PBKDF2 measured 35ms), so this -- not a crypto worker --
+// is what actually needs to report progress.
+async function vfFetchWithProgress(url, onProgress) {
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) throw new Error("http " + res.status);
+  const total = parseInt(res.headers.get("content-length") || "0", 10);
+  if (!res.body || !total) {
+    const buf = await res.arrayBuffer();
+    if (onProgress) onProgress(buf.byteLength, buf.byteLength || 1);
+    return buf;
+  }
+  const reader = res.body.getReader();
+  const chunks = [];
+  let received = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    received += value.length;
+    if (onProgress) onProgress(received, total);
+  }
+  const out = new Uint8Array(received);
+  let offset = 0;
+  for (const c of chunks) { out.set(c, offset); offset += c.length; }
+  return out.buffer;
+}
+
+async function vfGunzipToText(buf) {
+  const stream = new Blob([buf]).stream().pipeThrough(new DecompressionStream("gzip"));
+  return new TextDecoder().decode(await new Response(stream).arrayBuffer());
+}
+
+// The core rule this exists to enforce: a magic/digest mismatch is a STALE
+// BUILD (this page and its data are out of step -- reload), never a wrong
+// key. An AES auth failure is only classified as a wrong key when the
+// caller has NOT already confirmed the key via the keyFp fingerprint check
+// (vfKeyFingerprint) -- if keyConfirmed is true, the key is provably right,
+// so any decrypt failure here is corruption/staleness, never the key.
+// Today the live site told a reader with the correct key that the key was
+// wrong; this function (plus the fingerprint pre-check in vfAttemptUnlock)
+// is what makes that impossible going forward.
+async function vfDecryptEnvelope(buf, expectDigest, pass, keyConfirmed) {
   const bytes = new Uint8Array(buf);
-  const salt = bytes.slice(0, 16), iv = bytes.slice(16, 28), ct = bytes.slice(28);
-  const key = await deriveKey(pass, salt);
-  const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ct);
-  return JSON.parse(new TextDecoder().decode(plain));
+  const magic = new TextDecoder().decode(bytes.slice(0, 4));
+  if (magic !== VF_MAGIC) return { status: "stale", reason: "magic" };
+  if (expectDigest) {
+    const actual = await vfSha256Hex(buf);
+    // Tolerate a shortened digest (e.g. an 8-hex build stamp) as a prefix match.
+    const matches = actual === expectDigest || actual.startsWith(expectDigest) || expectDigest.startsWith(actual);
+    if (!matches) return { status: "stale", reason: "digest", actual, expected: expectDigest };
+  }
+  const salt = bytes.slice(4, 20), iv = bytes.slice(20, 32), ct = bytes.slice(32);
+  let plain;
+  try {
+    const key = await vfDeriveKey(pass, salt);
+    plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ct);
+  } catch (e) {
+    return keyConfirmed ? { status: "stale", reason: "auth-despite-confirmed-key" } : { status: "wrong-key" };
+  }
+  try {
+    const json = await vfGunzipToText(plain);
+    return { status: "ok", data: JSON.parse(json) };
+  } catch (e) {
+    // Decrypted fine (so the key was right) but the payload didn't gunzip
+    // or parse -- that is corruption/staleness, not a key problem either.
+    return { status: "stale", reason: "payload" };
+  }
 }
 
-function gateHtml() {
-  return `<div id="gate" style="position:fixed;inset:0;background:#14120f;display:flex;align-items:center;justify-content:center;z-index:999">
-    <form id="gateForm" style="background:#1c1915;border:1px solid #2e2a22;border-radius:8px;padding:32px 36px;width:340px;font:15px/1.5 -apple-system,system-ui,sans-serif;color:#e8e1d3">
-      <h1 style="font-family:ui-serif,Georgia,serif;font-size:19px;margin:0 0 6px">research <em style="font-style:normal;color:#c9a24b">archive</em></h1>
-      <p style="color:#a89c85;font-size:13px;margin:0 0 18px">Enter the access key. Data is encrypted; nothing renders without it.</p>
-      <input id="gateKey" type="password" autocomplete="current-password" placeholder="access key" style="width:100%;box-sizing:border-box;background:#100e0b;border:1px solid #2e2a22;color:#e8e1d3;border-radius:5px;padding:10px 12px;font-size:14px">
-      <button type="submit" style="margin-top:14px;width:100%;background:#c9a24b;color:#14120f;border:0;border-radius:5px;padding:10px;font-size:14px;font-weight:600;cursor:pointer">Decrypt</button>
-      <div id="gateErr" style="color:#d16a5a;font-size:12.5px;margin-top:10px"></div>
-    </form></div>`;
+// ---- gate UI (remember-on-device key, D2/D12) ----
+const VF_KEY_STORAGE = "vf_key";
+
+function vfGateHtml() {
+  return `<div id="vfGate" style="position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:999;font:15px/1.5 var(--sans);color:var(--text)">
+    <form id="vfGateForm" style="background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:32px 36px;width:360px">
+      <h1 style="font-family:var(--serif);font-size:19px;margin:0 0 6px">research <em style="font-style:normal;color:var(--accent)">archive</em></h1>
+      <p style="color:var(--muted);font-size:13px;margin:0 0 16px">Enter the access key. Data is encrypted; nothing renders without it.</p>
+      <input id="vfGateKey" type="password" autocomplete="current-password" placeholder="access key"
+        style="width:100%;box-sizing:border-box;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:5px;padding:10px 12px;font-size:14px">
+      <label style="display:flex;align-items:center;gap:7px;margin-top:12px;font-size:12.5px;color:var(--muted)">
+        <input type="checkbox" id="vfRemember" checked> remember on this device
+      </label>
+      <button type="submit" style="margin-top:14px;width:100%;background:var(--accent);color:var(--bg);border:0;border-radius:5px;padding:10px;font-size:14px;font-weight:600;cursor:pointer">Decrypt</button>
+      <div id="vfGateErr" style="color:var(--bad);font-size:12.5px;margin-top:10px;min-height:1.4em"></div>
+      <div id="vfProgressWrap" style="margin-top:4px;height:4px;background:var(--line2);border-radius:2px;overflow:hidden;display:none">
+        <div id="vfProgressBar" style="height:100%;background:var(--accent);width:0%"></div>
+      </div>
+      <div id="vfProgressLabel" style="font-size:11px;color:var(--dim);margin-top:5px"></div>
+      <div id="vfGateStatus" style="font-size:11px;color:var(--dim);margin-top:10px"></div>
+    </form>
+  </div>`;
 }
 
-async function unlock(pass) {
-  window.__ARCHIVE__ = await tryDecrypt(pass);
-  sessionStorage.setItem("archive_pass", pass);
-  const g = document.getElementById("gate");
-  if (g) g.remove();
-  loadMeta().then(() => { loadEntities(); loadCockpit(); });
-}
-
-window.addEventListener("DOMContentLoaded", async () => {
-  document.body.insertAdjacentHTML("beforeend", gateHtml());
-  document.getElementById("gateForm").addEventListener("submit", async (e) => {
+function vfShowGate() {
+  if ($("vfGate")) return;
+  document.body.insertAdjacentHTML("beforeend", vfGateHtml());
+  $("vfGateForm").addEventListener("submit", e => {
     e.preventDefault();
-    const pass = document.getElementById("gateKey").value.trim();
-    try { await unlock(pass); }
-    catch (err) { document.getElementById("gateErr").textContent = "Wrong key (or corrupted download)."; }
+    const pass = $("vfGateKey").value.trim();
+    if (pass) vfAttemptUnlock(pass);
   });
-  const saved = sessionStorage.getItem("archive_pass");
-  if (saved) { try { await unlock(saved); } catch (e) { sessionStorage.removeItem("archive_pass"); } }
-  document.getElementById("gateKey").focus();
-});
+  $("vfGateKey").focus();
+}
+function vfHideGate() { const g = $("vfGate"); if (g) g.remove(); }
+function vfShowGateError(msg) { const e = $("vfGateErr"); if (e) e.textContent = msg; }
+function vfSetProgress(frac, label) {
+  const wrap = $("vfProgressWrap"), bar = $("vfProgressBar"), lab = $("vfProgressLabel");
+  if (!wrap) return;
+  wrap.style.display = "block";
+  const pct = Math.round(Math.min(1, Math.max(0, frac)) * 100);
+  bar.style.width = pct + "%";
+  if (lab) lab.textContent = label + (frac > 0 && frac < 1 ? " " + pct + "%" : "");
+}
 
-// In-memory implementations of the server endpoints, over the decrypted bundle.
-function staticApi(path) {
-  const A = window.__ARCHIVE__;
+// Unencrypted status.json (build ts, digest, nothing sensitive) the page
+// can read before the gate, so a broken publish is visible without a key.
+async function vfLoadStatus() {
+  try {
+    const r = await fetch("status.json", { cache: "no-store" });
+    if (!r.ok) return;
+    const s = await r.json();
+    const el = $("vfGateStatus");
+    if (!el) return;
+    const parts = [];
+    if (s.build_ts) parts.push("build " + String(s.build_ts).slice(0, 10));
+    // If the unencrypted, always-fresh status.json disagrees with what THIS
+    // index.html is stamped with, the two shipped out of step -- surface it
+    // before the reader even types a key, same "stale build" wording.
+    if (window.VF && s.core_digest && s.core_digest !== window.VF.coreDigest) {
+      parts.push("this page and the published data are out of step — reload / hard-refresh");
+    }
+    el.textContent = parts.join(" · ");
+  } catch (e) { /* best effort only, never blocks the gate */ }
+}
+
+function vfInjectForgetControl() {
+  if (!window.VF || $("vfForgetBtn")) return;
+  const btn = document.createElement("span");
+  btn.id = "vfForgetBtn";
+  btn.textContent = "forget key";
+  btn.title = "Clear the saved access key from this device";
+  btn.style.cssText = "cursor:pointer;font-size:11px;color:var(--dim);margin-left:12px;text-decoration:underline;white-space:nowrap";
+  btn.addEventListener("click", () => {
+    localStorage.removeItem(VF_KEY_STORAGE);
+    sessionStorage.removeItem(VF_KEY_STORAGE);
+    location.reload();
+  });
+  const asof = $("asof");
+  if (asof) asof.insertAdjacentElement("afterend", btn);
+}
+
+async function vfAttemptUnlock(pass) {
+  vfShowGate();
+  vfShowGateError("");
+  // Fast pre-download wrong-key check: compares a fingerprint of the
+  // derived key against window.VF.keyFp (same fixed-salt PBKDF2 the
+  // exporter used). This says nothing about payload freshness, only
+  // whether the typed key matches what this index.html was built with --
+  // so a mismatch here is unambiguously "wrong key", never "stale build".
+  let keyConfirmed = false;
+  if (window.VF && window.VF.keyFp) {
+    const fp = await vfKeyFingerprint(pass);
+    keyConfirmed = fp === window.VF.keyFp;
+    if (!keyConfirmed) {
+      vfShowGateError("That access key does not match this build's data.");
+      localStorage.removeItem(VF_KEY_STORAGE);
+      sessionStorage.removeItem(VF_KEY_STORAGE);
+      return false;
+    }
+  }
+  vfSetProgress(0.02, "Downloading…");
+  let buf;
+  try {
+    buf = await vfFetchWithProgress(window.VF.core, (r, t) => vfSetProgress(t ? r / t : 0.5, "Downloading…"));
+  } catch (e) {
+    vfShowGateError("Could not download the archive data. Check your connection and reload.");
+    return false;
+  }
+  vfSetProgress(1, "Decrypting…");
+  const result = await vfDecryptEnvelope(buf, window.VF.coreDigest, pass, keyConfirmed);
+  if (result.status === "stale") {
+    vfShowGateError("This page and its data are out of step (stale build) — reload / hard-refresh. This is not a problem with your key.");
+    return false; // never touch a saved key over a build-skew failure
+  }
+  if (result.status === "wrong-key") {
+    vfShowGateError("That access key does not match this build's data.");
+    localStorage.removeItem(VF_KEY_STORAGE);
+    sessionStorage.removeItem(VF_KEY_STORAGE);
+    return false;
+  }
+  VF_PASS = pass;
+  VF_CORE = result.data;
+  const remember = $("vfRemember") ? $("vfRemember").checked : true;
+  if (remember) { localStorage.setItem(VF_KEY_STORAGE, pass); sessionStorage.removeItem(VF_KEY_STORAGE); }
+  else { sessionStorage.setItem(VF_KEY_STORAGE, pass); localStorage.removeItem(VF_KEY_STORAGE); }
+  vfHideGate();
+  vfInjectForgetControl();
+  await vfBoot();
+  return true;
+}
+
+async function vfStaticBoot() {
+  vfShowGate();
+  vfLoadStatus();
+  const saved = localStorage.getItem(VF_KEY_STORAGE) || sessionStorage.getItem(VF_KEY_STORAGE);
+  if (saved) await vfAttemptUnlock(saved);
+}
+
+// ---- on-demand entity details (D3: entity_details is 47% of the old
+// monolithic payload for the one dossier a visit actually reads) ----
+async function vfEnsureDetails() {
+  if (VF_DETAILS) return VF_DETAILS;
+  if (!VF_DETAILS_PROMISE) {
+    VF_DETAILS_PROMISE = (async () => {
+      const buf = await vfFetchWithProgress(window.VF.details);
+      const result = await vfDecryptEnvelope(buf, window.VF.detailsDigest, VF_PASS, true);
+      if (result.status !== "ok") throw new Error("details-" + result.status);
+      VF_DETAILS = result.data;
+      return VF_DETAILS;
+    })();
+    VF_DETAILS_PROMISE.catch(() => { VF_DETAILS_PROMISE = null; }); // allow retry on failure
+  }
+  return VF_DETAILS_PROMISE;
+}
+
+// ---- in-memory API resolver over the decrypted core bundle: same
+// endpoints/filters as the live server's browser.py, so the rest of the
+// app (loadEntities, loadEvidence, loadCockpit, ...) is unchanged. ----
+async function vfResolveApi(path) {
+  const A = VF_CORE;
   if (!A) throw new Error("locked");
   const u = new URL(path, location.origin);
   const q = u.searchParams;
@@ -587,7 +831,9 @@ function staticApi(path) {
   if (u.pathname === "/api/crew") return A.crew;
   if (u.pathname === "/api/ach") return A.ach;
   if (u.pathname.startsWith("/api/entity/")) {
-    const d = A.entity_details[u.pathname.split("/").pop()];
+    const id = u.pathname.split("/").pop();
+    const details = await vfEnsureDetails();
+    const d = details[id];
     if (!d) throw new Error(404);
     return d;
   }
@@ -620,18 +866,143 @@ function staticApi(path) {
   }
   throw new Error(404);
 }
-</script>
 
-<script>
-const $ = id => document.getElementById(id);
-const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-let state = { view: "entities", search: "", type: "", status: "", country: "", vector: "", selectedEntity: null, meta: null };
-const fmtDkk = v => v >= 1e6 ? "~" + (v / 1e6).toFixed(1) + "M DKK/yr" : "~" + Math.round(v / 1e3) + "k DKK/yr";
+// ---- hash router (2c): #/entity/<id>, #/usecase/<slug>, #/evidence/<id>,
+// #/changes, plus tab routes. Filter tweaks use replaceState (no new
+// history entry); real navigation (tabs, dossiers, evidence) pushes a
+// hash change so back/forward move between actual places, not keystrokes. ----
+const VF_TAB_ROUTES = { cockpit: "cockpit", prospects: "pipeline", entities: "library", questions: "questions", calendar: "calendar" };
+const VF_TAB_ROUTES_REV = Object.fromEntries(Object.entries(VF_TAB_ROUTES).map(([k, v]) => [v, k]));
 
-function fmtDate(d) { return d ? d.slice(0, 10) : ""; }
+function vfSetHash(pathWithQuery, replace) {
+  const target = "#" + pathWithQuery;
+  if (location.hash === target) return;
+  if (replace) history.replaceState(null, "", target);
+  else location.hash = pathWithQuery;
+}
 
-async function api(path) {
-  return staticApi(path);
+function vfParseHash() {
+  let h = location.hash || "";
+  if (h.startsWith("#")) h = h.slice(1);
+  if (h.startsWith("/")) h = h.slice(1);
+  const [pathPart, queryPart] = h.split("?");
+  return { parts: pathPart.split("/").filter(Boolean), params: new URLSearchParams(queryPart || "") };
+}
+
+function vfTombstoneHtml(title, body) {
+  return `<div class="empty" style="padding:60px 24px">
+    <div style="font-family:var(--serif);font-size:16px;color:var(--text);margin-bottom:8px">${esc(title)}</div>
+    ${body ? `<div style="font-size:13px;color:var(--muted)">${esc(body)}</div>` : ""}
+  </div>`;
+}
+
+function activateGenericView(viewId, title, body) {
+  document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
+  document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === viewId));
+  state.view = viewId.replace("view-", "");
+  $(viewId).innerHTML = vfTombstoneHtml(title, body);
+}
+
+function showUsecasePlaceholder(slug) {
+  activateGenericView("view-usecase", "Use case: " + (slug || "?"),
+    "Vertical use-case pages ship in a later wave. This URL is reserved so the link can be shared and revisited today.");
+}
+function showChangesPlaceholder() {
+  activateGenericView("view-changes", "Changes",
+    "The since-last-visit digest ships in a later wave. This URL is reserved so the link can be shared and revisited today.");
+}
+function showUnknownRoute(head) {
+  activateGenericView("view-route404", "Nothing here",
+    `"#/${head}" doesn't match a known page. Use the tabs above, or a link shared from this archive.`);
+}
+
+async function routeEvidence(idStr) {
+  libMode = "evidence";
+  document.querySelectorAll(".modeswitch div").forEach(d => d.classList.toggle("active", d.dataset.mode === "evidence"));
+  $("view-entities").classList.remove("active");
+  $("view-evidence").classList.add("active");
+  await loadEvidence();
+  const row = evAll.find(e => String(e.id) === String(idStr));
+  if (!row) {
+    $("evList").innerHTML = vfTombstoneHtml("No claim with id " + esc(idStr),
+      "It may have been removed, or the link may be stale.");
+    return;
+  }
+  const highlighted = `<div style="border:1px solid var(--accent-dim);border-radius:6px;padding:2px;margin-bottom:14px">${citationHtml(row, true)}</div>`;
+  if (row.invalid_at) {
+    $("evList").innerHTML = vfTombstoneHtml("This row was retracted on " + fmtDate(row.invalid_at),
+      "Kept for the record; no longer treated as valid evidence.") + highlighted;
+    return;
+  }
+  $("evList").insertAdjacentHTML("afterbegin", highlighted);
+}
+
+function activateTab(viewKey, opts) {
+  opts = opts || {};
+  document.querySelectorAll(".tab").forEach(x => x.classList.toggle("active", x.dataset.view === viewKey));
+  document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + viewKey));
+  state.view = viewKey;
+  if (!opts.fromRoute) vfSetHash("/" + (VF_TAB_ROUTES[viewKey] || viewKey));
+  if (viewKey === "cockpit") loadCockpit();
+  if (viewKey === "entities") setLibMode(libMode);
+  if (viewKey === "questions") loadQuestions();
+  if (viewKey === "prospects") loadProspects();
+  if (viewKey === "calendar") loadCalendar();
+}
+
+// Marks just the entities view/tab/mode active in the DOM, without also
+// firing loadEntities() -- callers that need the list loaded do that
+// themselves and await it, so it can't race a subsequent selectEntity()
+// (loadEntities() deselects state.selectedEntity when it doesn't find it in
+// a freshly-fetched list; racing it against selectEntity() was clobbering
+// tombstones right after they rendered).
+function vfActivateEntitiesView(mode) {
+  document.querySelectorAll(".tab").forEach(x => x.classList.toggle("active", x.dataset.view === "entities"));
+  document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "view-entities"));
+  state.view = "entities";
+  libMode = mode;
+  document.querySelectorAll(".modeswitch div").forEach(d => d.classList.toggle("active", d.dataset.mode === mode));
+}
+
+async function vfHandleHashChange() {
+  const { parts, params } = vfParseHash();
+  if (!parts.length) { activateTab("cockpit", { fromRoute: true }); return; }
+  const [head, sub] = parts;
+  if (head === "entity") {
+    const id = parseInt(sub, 10);
+    vfActivateEntitiesView("entities");
+    if (Number.isNaN(id)) {
+      $("detailEmpty").style.display = "none";
+      $("detail").style.display = "block";
+      $("detail").innerHTML = vfTombstoneHtml("Invalid entity link", "The id in this URL is not valid.");
+      return;
+    }
+    await loadEntities();       // await: selectEntity below must not race this
+    selectEntity(id, { fromRoute: true });
+    return;
+  }
+  if (head === "evidence") { vfActivateEntitiesView("evidence"); routeEvidence(sub); return; }
+  if (head === "usecase") { showUsecasePlaceholder(sub || ""); return; }
+  if (head === "changes") { showChangesPlaceholder(); return; }
+  const tabKey = VF_TAB_ROUTES_REV[head];
+  if (tabKey) {
+    activateTab(tabKey, { fromRoute: true });
+    const qv = params.get("q");
+    if (qv && $("search").value !== qv) {
+      $("search").value = qv;
+      state.search = qv;
+      if (tabKey === "entities") (libMode === "evidence" ? loadEvidence() : loadEntities());
+    }
+    return;
+  }
+  showUnknownRoute(head);
+}
+
+window.addEventListener("hashchange", vfHandleHashChange);
+
+async function vfBoot() {
+  await loadMeta();
+  vfHandleHashChange();
 }
 
 async function loadMeta() {
@@ -769,14 +1140,37 @@ function citationHtml(e, showEntity) {
   </div>`;
 }
 
-async function selectEntity(id) {
+async function selectEntity(id, opts) {
+  opts = opts || {};
   state.selectedEntity = id;
-  await loadAch();  // dependency chips on the claim cards
+  if (!opts.fromRoute) vfSetHash("/entity/" + id);
   $("entityList").querySelectorAll(".erow").forEach(el => el.classList.toggle("active", parseInt(el.dataset.id) === id));
-  const d = await api("/api/entity/" + id);
   $("detailEmpty").style.display = "none";
   const det = $("detail");
   det.style.display = "block";
+  // Inline loading state: in a static build the first dossier opened in a
+  // session pays for fetching+decrypting the whole entity_details bundle
+  // (D3 split), so this isn't always instant.
+  det.innerHTML = `<div class="empty">Loading dossier…</div>`;
+  let d;
+  try {
+    await loadAch();  // dependency chips on the claim cards
+    d = await api("/api/entity/" + id);
+  } catch (err) {
+    det.innerHTML = vfTombstoneHtml("This entity could not be loaded.",
+      "It may have been merged into another record, retracted, or the link is stale. Reload to try again.");
+    return;
+  }
+  if (d.status === "merged") {
+    det.innerHTML = vfTombstoneHtml(
+      "This entity was merged" + (d.merged_into_name ? " into " + d.merged_into_name : "") + ".",
+      d.merged_into_id ? "" : "Search the Library for the current record.");
+    if (d.merged_into_id) {
+      const link = det.querySelector(".empty");
+      if (link) { link.style.cursor = "pointer"; link.addEventListener("click", () => selectEntity(d.merged_into_id)); }
+    }
+    return;
+  }
   const aliases = (d.aliases || []).filter(a => a !== d.name);
   det.innerHTML = `
     <div class="dhead">
@@ -1007,12 +1401,12 @@ async function loadProspects() {
   if (lc) lc.addEventListener("click", () => { pipeState.lane = ""; loadProspects(); });
   const dl = $("prList").querySelector("[data-dossier]");
   if (dl) dl.addEventListener("click", () => {
-    document.querySelector('.tab[data-view="entities"]').click();
+    activateTab("entities", { fromRoute: true });
     setLibMode("entities");
     selectEntity(parseInt(dl.dataset.dossier));
   });
   $("prList").querySelectorAll(".prcard[data-id]").forEach(el => el.addEventListener("click", () => {
-    document.querySelector('.tab[data-view="entities"]').click();
+    activateTab("entities", { fromRoute: true });
     setLibMode("entities");
     selectEntity(parseInt(el.dataset.id));
   }));
@@ -1023,7 +1417,7 @@ async function loadProspects() {
 function openPipelineVector(v, lane) {
   pipeState.vector = v || "";
   pipeState.lane = lane || "";
-  document.querySelector('.tab[data-view="prospects"]').click();
+  activateTab("prospects");
 }
 
 
@@ -1152,7 +1546,7 @@ function renderCalendar() {
 }
 
 function goToEntity(id) {
-  document.querySelector('.tab[data-view="entities"]').click();
+  activateTab("entities", { fromRoute: true });
   setLibMode("entities");
   selectEntity(id);
 }
@@ -1435,24 +1829,21 @@ document.querySelectorAll(".modeswitch div").forEach(d =>
   d.addEventListener("click", () => setLibMode(d.dataset.mode)));
 
 function openEvidenceForQuestion(num) {
-  document.querySelectorAll(".tab").forEach(x => x.classList.toggle("active", x.dataset.view === "entities"));
-  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
-  state.view = "entities";
   const sel = $("evQuestion");
   if (sel) sel.value = String(num);
+  activateTab("entities", { fromRoute: true });
   setLibMode("evidence");
 }
 
-document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => {
-  document.querySelectorAll(".tab").forEach(x => x.classList.toggle("active", x === t));
-  document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + t.dataset.view));
-  state.view = t.dataset.view;
-  if (state.view === "cockpit") loadCockpit();
-  if (state.view === "entities") setLibMode(libMode);
-  if (state.view === "questions") loadQuestions();
-  if (state.view === "prospects") loadProspects();
-  if (state.view === "calendar") loadCalendar();
-}));
+document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => activateTab(t.dataset.view)));
+
+// Reflect the search box into the URL (replaceState: a filter tweak, not a
+// place to land on when you hit back) so a search result set is shareable.
+function vfReflectSearchInHash() {
+  const base = "/" + (VF_TAB_ROUTES[state.view] || state.view);
+  const qs = state.search ? "?q=" + encodeURIComponent(state.search) : "";
+  vfSetHash(base + qs, true);
+}
 
 let searchTimer;
 $("search").addEventListener("input", e => {
@@ -1461,6 +1852,7 @@ $("search").addEventListener("input", e => {
     state.search = e.target.value.trim();
     if (state.view === "entities") loadEntities();
     else if (state.view === "evidence") loadEvidence();
+    vfReflectSearchInHash();
   }, 220);
 });
 ["evQuestion", "evStakes", "evValidOnly", "evCountry", "evVector"].forEach(id =>
@@ -1485,7 +1877,8 @@ document.addEventListener("keydown", e => {
   }
 });
 
-/* boot happens after decrypt (static build) */
+if (window.VF) vfStaticBoot();
+else vfBoot();
 </script>
 </body>
 </html>
